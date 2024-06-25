@@ -1,4 +1,3 @@
-'use strict';
 import { Model, DataTypes } from 'sequelize';
 
 export default (sequelize) => {
@@ -34,7 +33,6 @@ export default (sequelize) => {
     sequelize,
     modelName: 'User',
   });
-  
 
   return User;
 };

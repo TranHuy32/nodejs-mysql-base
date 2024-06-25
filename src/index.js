@@ -1,4 +1,3 @@
-'use strict';
 import express from 'express';
 import 'dotenv/config';
 import sequelize from './config/database.js';
@@ -8,7 +7,7 @@ const port = process.env.PORT || 4000;
 
 async function connectDataBase() {
   try {
-    await sequelize.authenticate();
+    // await sequelize.authenticate();
     console.log('Connection has been established successfully.');
     await loaders(app);
     app.listen(port, () => {

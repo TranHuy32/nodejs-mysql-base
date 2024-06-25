@@ -1,10 +1,16 @@
+import db from '../models'
+const User = db.User;
+
 class TestService {
   async getTest(req) {
     try {
-      return 'test'
+      // Create a new user
+      const test = await User.create({ firstName: 'Jane', lastName: 'Doe' });
+      console.log("test's auto-generated ID:", test.id);
+      return test;
     } catch (error) {
-      console.error('Error sending message to LINE:', error);
-      throw new Error('An internal server error occurred');
+      console.error('error', error);
+      throw new Error(error);
     }
   }
 }
