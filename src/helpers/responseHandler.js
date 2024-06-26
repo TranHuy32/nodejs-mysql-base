@@ -4,6 +4,7 @@ export const errorHandler = (err, req, res, next) => {
     success: false,
     status: err.status || 500,
     message: err.message || 'An internal server error occurred',
+    date: err.date || new Date(),
   });
 };
 
