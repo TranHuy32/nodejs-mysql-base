@@ -1,0 +1,1 @@
+Tạo mới model: npx sequelize-cli model:generate --name Car --attributes name:string,color:string,manufacturer:string

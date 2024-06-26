@@ -10,7 +10,7 @@ export default (sequelize) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      User.hasMany(models.Car, { foreignKey: 'user_id' }); // Thiết lập mối quan hệ hasMany với Car
     }
     // toJSON() {
     //   const attributes = { ...this.get() };
