@@ -7,8 +7,8 @@ import car from './car';
 const v1 = Router();
 
 // Sử dụng router test và nối vào router v1
-auth(v1)
+auth(v1);
 user(v1);
-car(v1)
+car(v1);
 
 export default v1;

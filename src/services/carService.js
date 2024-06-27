@@ -12,13 +12,13 @@ class CarService {
         include: [
           {
             model: User, // Model User
-            attributes: ['id', 'name', 'phone_number'], // Các trường bạn muốn lấy từ User
+            attributes: ['id', 'name', 'phone_number'], // Các trường lấy từ User
           },
         ],
       });
       return car;
     } catch (error) {
-      console.log('err: ', error);
+      throw new ApiError(error.message);
     }
   }
 }

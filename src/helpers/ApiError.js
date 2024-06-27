@@ -1,7 +1,12 @@
-import { StatusCodes } from "http-status-codes";
+import { StatusCodes } from 'http-status-codes';
 
 class ApiError extends Error {
-  constructor(message, httpStatusCode = StatusCodes.INTERNAL_SERVER_ERROR, context, ...params) {
+  constructor(
+    message,
+    httpStatusCode = StatusCodes.INTERNAL_SERVER_ERROR,
+    context,
+    ...params
+  ) {
     super(...params);
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, ApiError);

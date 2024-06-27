@@ -1,6 +1,7 @@
 import { StatusCodes } from 'http-status-codes';
 import ApiError from '../helpers/ApiError';
 import Joi from 'joi';
+import { joiMessages } from '../common/validationErrorMessages';
 
 class Validation {
   validateRule = (req, rule) => {
@@ -15,16 +16,34 @@ class Validation {
 
   validateLogin = (req) => {
     const loginRule = Joi.object({
-      phoneNumber: Joi.string().required().messages({
-        'string.base': 'phoneNumber must be a string',
-        'string.empty': 'phoneNumber is not allowed to be empty',
-        'any.required': 'phoneNumber is a required field',
-      }),
-      password: Joi.string().required().messages({
-        'string.base': 'password must be a string',
-        'string.empty': 'password is not allowed to be empty',
-        'any.required': 'password is a required field',
-      }),
+      phoneNumber: Joi.string()
+        .required()
+        .min(2)
+        .max(10)
+        .regex(/^[0-9]{10}$/)
+        .messages(joiMessages('phoneNumber')),
+      password: Joi.string()
+        .min(6)
+        .required()
+        .messages(joiMessages('password')),
+    });
+    this.validateRule(req, loginRule);
+    return req;
+  };
+
+  validateRegister = (req) => {
+    const loginRule = Joi.object({
+      name: Joi.string().min(2).required().messages(joiMessages('name')),
+      phoneNumber: Joi.string()
+        .required()
+        .min(2)
+        .max(10)
+        .regex(/^[0-9]{10}$/)
+        .messages(joiMessages('phoneNumber')),
+      password: Joi.string()
+        .min(6)
+        .required()
+        .messages(joiMessages('password')),
     });
     this.validateRule(req, loginRule);
     return req;

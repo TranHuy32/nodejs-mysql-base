@@ -14,7 +14,7 @@ export default (sequelize) => {
     }
     // toJSON() {
     //   const attributes = { ...this.get() };
-    //   delete attributes.createdAt;
+    //   delete attributes.createdAt;    // Khi trả ra json sẽ xóa createdAt
     //   delete attributes.updatedAt;
     //   delete attributes.deletedAt;
     //   return attributes;
@@ -87,14 +87,13 @@ export default (sequelize) => {
       updatedAt: 'updated_at',
       deletedAt: 'deleted_at',
       tableName: 'Users',
-    }
+    },
   );
 
   User.beforeCreate(async (user, options) => {
-    console.log(user);
-    console.log(options);
-    const hashedPassword = await CommonService.hashPassword(user.password);
+    const hashedPassword = CommonService.hashPassword(user.password);
     user.password = hashedPassword;
+    console.log('Before create');
   });
 
   User.addHook('beforeFind', (options) => {
@@ -102,7 +101,6 @@ export default (sequelize) => {
       options.where = {};
     }
     options.where.deleted_at = null;
-    console.log('Before find hook:', options);
     console.log('Before find hook');
   });
 
