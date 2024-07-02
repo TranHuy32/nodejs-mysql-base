@@ -6,7 +6,7 @@
     "start": "babel-node ./src/index.js",
     "dev": "nodemon ./src/index.js --exec babel-node",
     "migrate": "sequelize-cli db:migrate",
-    "format": "prettier --write ."
+    "format": "prettier --write \"src/\""
   },
   "keywords": [],
   "author": "",

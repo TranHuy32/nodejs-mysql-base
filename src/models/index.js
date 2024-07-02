@@ -5,9 +5,11 @@ import config from '../config/config';
 
 const db = {};
 
-const { username, password, database, host, dialect } = config.development;
+const { username, password, database, host, dialect, port } =
+  config.development;
 const sequelize = new Sequelize(database, username, password, {
   host,
+  port,
   dialect,
 });
 

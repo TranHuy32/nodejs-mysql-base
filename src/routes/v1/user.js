@@ -17,6 +17,19 @@ const setupRoutes = (app) => {
       return next(err);
     }
   });
+
+  route.get(
+    '/detail',
+    verifyAccessToken([UserRole.USER]),
+    async (req, res, next) => {
+      try {
+        const result = await UserService.getDetail(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 };
 
 export default setupRoutes;

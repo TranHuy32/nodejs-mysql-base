@@ -15,7 +15,8 @@ class CarService {
             attributes: ['id', 'name', 'phone_number'], // Các trường lấy từ User
           },
         ],
-      });
+      }).then((res) => (!!res ? res.toJSON() : {}));
+
       return car;
     } catch (error) {
       throw new ApiError(error.message);
