@@ -5,5 +5,6 @@ export const TokenType = {
 
 export const UserRole = {
   ADMIN: 'admin',
+  STAFF: 'staff',
   USER: 'user',
 };

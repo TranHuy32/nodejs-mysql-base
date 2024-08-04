@@ -34,12 +34,7 @@ class Validation {
   validateRegister = (req) => {
     const loginRule = Joi.object({
       name: Joi.string().min(2).required().messages(joiMessages('name')),
-      phoneNumber: Joi.string()
-        .required()
-        .min(2)
-        .max(10)
-        .regex(/^[0-9]{10}$/)
-        .messages(joiMessages('phoneNumber')),
+      username: Joi.string().required().messages(joiMessages('username')),
       password: Joi.string()
         .min(6)
         .required()

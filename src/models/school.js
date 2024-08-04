@@ -1,21 +1,18 @@
 import { Model, DataTypes } from 'sequelize';
 
 export default (sequelize) => {
-  class Car extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
+  class School extends Model {
     static associate(models) {
-      Car.belongsTo(models.User, { foreignKey: 'user_id' }); // Thiết lập mối quan hệ belongsTo với User
+      School.hasMany(models.User, { foreignKey: 'school_id' }); // Liên kết School với Users
+      School.hasMany(models.Order, { foreignKey: 'school_id' }); // Liên kết School với Orders
     }
   }
-  Car.init(
+
+  School.init(
     {
       id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
       name: {
@@ -26,27 +23,16 @@ export default (sequelize) => {
           len: [2, 100],
         },
       },
-      color: {
+      address: {
         type: DataTypes.STRING,
-        allowNull: false,
         validate: {
-          notEmpty: true,
-          len: [2, 100],
+          len: [0, 255],
         },
       },
-      manufacturer: {
+      contact_number: {
         type: DataTypes.STRING,
-        allowNull: false,
         validate: {
-          notEmpty: true,
-          len: [2, 100],
-        },
-      },
-      user_id: {
-        type: DataTypes.INTEGER,
-        references: {
-          model: 'User',
-          key: 'id',
+          is: /^[0-9\-\+]{9,15}$/, // Regular expression for contact number validation
         },
       },
       created_at: {
@@ -62,20 +48,20 @@ export default (sequelize) => {
       deleted_at: {
         type: DataTypes.DATE,
         allowNull: true,
-        defaultValue: null,
       },
     },
     {
       sequelize,
-      modelName: 'Car',
+      modelName: 'School',
       timestamps: true,
       paranoid: true,
       underscored: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at',
       deletedAt: 'deleted_at',
-      tableName: 'Cars',
+      tableName: 'Schools',
     },
   );
-  return Car;
+
+  return School;
 };

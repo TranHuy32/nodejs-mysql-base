@@ -2,7 +2,6 @@ import db from '../models';
 import ApiError from '../helpers/ApiError';
 
 const User = db.User;
-const Car = db.Car;
 
 class UserService {
   async getAll(req) {

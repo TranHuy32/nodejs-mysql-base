@@ -4,44 +4,26 @@ import { UserRole } from '../common/constants';
 
 export default (sequelize) => {
   class User extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      User.hasMany(models.Car, { foreignKey: 'user_id' }); // Thiết lập mối quan hệ hasMany với Car
+      User.hasMany(models.Order, { foreignKey: 'user_id' }); // Liên kết User với Order
+      User.belongsTo(models.School, { foreignKey: 'school_id' }); // Liên kết User với School
     }
-    // toJSON() {
-    //   const attributes = { ...this.get() };
-    //   delete attributes.createdAt;    // Khi trả ra json sẽ xóa createdAt
-    //   delete attributes.updatedAt;
-    //   delete attributes.deletedAt;
-    //   return attributes;
-    // }
   }
 
   User.init(
     {
       id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-          notEmpty: true,
-          len: [2, 100],
-        },
-      },
-      phone_number: {
+      username: {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
         validate: {
-          is: /^[0-9\-\+]{9,15}$/, // Regular expression for phone number validation
+          notEmpty: true,
+          len: [2, 50],
         },
       },
       password: {
@@ -49,7 +31,13 @@ export default (sequelize) => {
         allowNull: false,
         validate: {
           notEmpty: true,
-          len: [6, 100], // validation: password should be between 6 and 100 characters
+          len: [6, 100],
+        },
+      },
+      name: {
+        type: DataTypes.STRING,
+        validate: {
+          len: [2, 100],
         },
       },
       role: {
@@ -82,7 +70,7 @@ export default (sequelize) => {
       modelName: 'User',
       timestamps: true,
       paranoid: true,
-      underscored: true, // tự chuyển về snake case
+      underscored: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at',
       deletedAt: 'deleted_at',

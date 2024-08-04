@@ -7,7 +7,6 @@ import CommonService from '../services/commonService';
 import jwt from 'jsonwebtoken';
 
 const User = db.User;
-const Token = db.Token;
 
 class AuthService {
   async createToken(payload, type) {
@@ -31,18 +30,21 @@ class AuthService {
       }
       return jwt.sign(payload, tokenSecret, { expiresIn });
     } catch (error) {
+      console.error('createToken', error);
       throw new ApiError(error.message);
     }
   }
 
   async login(req) {
     try {
-      const { phoneNumber: phone_number, password } = req.body;
+      const { username, password } = req.body;
 
-      const user = await User.findOne({ where: { phone_number } });
+      const user = await User.findOne({
+        where: { username, deleted_at: null },
+      });
       if (!user) {
         throw new ApiError(
-          'PhoneNumber or Password is not correct',
+          'Username or Password is not correct',
           StatusCodes.UNPROCESSABLE_ENTITY,
         );
       }
@@ -52,36 +54,38 @@ class AuthService {
       const valid = bcrypt.compareSync(password, hashedPassword);
       if (!valid) {
         throw new ApiError(
-          'PhoneNumber or Password is not correct',
+          'Username or Password is not correct',
           StatusCodes.UNPROCESSABLE_ENTITY,
         );
       }
       const token = {
         accessToken: await this.createToken(payload, TokenType.ACCESS_TOKEN),
         refreshToken: await this.createToken(payload, TokenType.REFRESH_TOKEN),
+        user: payload,
       };
-      await Token.create({ token: token.refreshToken, user_id: user.id });
       return token;
     } catch (error) {
+      console.log('error', error);
       throw new ApiError(error.message, error.status);
     }
   }
 
   async register(req) {
     try {
-      const { name, phoneNumber: phone_number, password } = req.body;
       const existUser = await User.findOne({
-        where: { phone_number },
+        where: { username: 'admin' },
       });
       if (!!existUser) {
-        throw new ApiError('phoneNumber is existed', StatusCodes.BAD_REQUEST);
+        throw new ApiError('admin is existed', StatusCodes.BAD_REQUEST);
       }
+
       const userCreated = await User.create({
-        name,
-        phone_number,
-        password,
-        role: UserRole.USER,
+        name: 'admin',
+        username: 'admin',
+        password: process.env.ADMIN_PASSWORD,
+        role: UserRole.ADMIN,
       });
+
       if (!userCreated) {
         throw new ApiError(
           'Error creating user',
@@ -93,6 +97,42 @@ class AuthService {
       });
       return result;
     } catch (error) {
+      throw new ApiError(error.message, error.status);
+    }
+  }
+
+  async createUser(req) {
+    try {
+      const { name, username, password, role, schoolId } = req.body;
+      const existUser = await User.findOne({
+        where: { username, deleted_at: null },
+      });
+      if (!!existUser) {
+        throw new ApiError('username is existed', StatusCodes.BAD_REQUEST);
+      }
+      console.log(1111111111, existUser);
+
+      const userCreated = await User.create({
+        name,
+        username,
+        password,
+        role: UserRole.ADMIN,
+      });
+      console.log(2222222222, userCreated);
+
+      if (!userCreated) {
+        throw new ApiError(
+          'Error creating user',
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        );
+      }
+      const { password: createdPassword, ...result } = userCreated.get({
+        plain: true,
+      });
+      return result;
+    } catch (error) {
+      console.log('error', error);
+
       throw new ApiError(error.message, error.status);
     }
   }
