@@ -28,6 +28,8 @@ export default (sequelize) => {
         validate: {
           len: [0, 255],
         },
+        defaultValue: null,
+        allowNull: true,
       },
       contact_number: {
         type: DataTypes.STRING,
