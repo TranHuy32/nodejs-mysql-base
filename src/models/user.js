@@ -6,7 +6,7 @@ export default (sequelize) => {
   class User extends Model {
     static associate(models) {
       User.hasMany(models.Order, { foreignKey: 'user_id' }); // Liên kết User với Order
-      User.belongsTo(models.School, { foreignKey: 'school_id' }); // Liên kết User với School
+      User.belongsTo(models.School, { as: 'school', foreignKey: 'school_id' });
     }
   }
 

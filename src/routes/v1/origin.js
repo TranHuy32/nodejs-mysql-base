@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import UserService from '../../services/userService';
+import OriginService from '../../services/originService';
 import { successHandler } from '../../helpers/responseHandler';
 import { verifyAccessToken } from '../../middlewares/verifyToken';
 import { UserRole } from '../../common/constants';
@@ -7,14 +7,14 @@ import { UserRole } from '../../common/constants';
 const route = Router();
 
 const setupRoutes = (app) => {
-  app.use('/user', route);
+  app.use('/origin', route);
 
-  route.get(
-    '/',
+  route.post(
+    '',
     verifyAccessToken([UserRole.ADMIN]),
     async (req, res, next) => {
       try {
-        const result = await UserService.getAll(req);
+        const result = await OriginService.create(req);
         return successHandler(res, 'success', result);
       } catch (err) {
         return next(err);
@@ -23,11 +23,11 @@ const setupRoutes = (app) => {
   );
 
   route.get(
-    '/detail',
-    verifyAccessToken([UserRole.ADMIN, UserRole.STAFF, UserRole.USER]),
+    '',
+    verifyAccessToken([UserRole.ADMIN, UserRole.USER, UserRole.STAFF]),
     async (req, res, next) => {
       try {
-        const result = await UserService.getDetail(req);
+        const result = await OriginService.getAll(req);
         return successHandler(res, 'success', result);
       } catch (err) {
         return next(err);

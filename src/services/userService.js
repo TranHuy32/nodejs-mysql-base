@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import { UserRole } from '../common/constants';
 
 const User = db.User;
+const School = db.School;
 
 class UserService {
   async getAll(req) {
@@ -54,15 +55,18 @@ class UserService {
   async getDetail(req) {
     try {
       const { id } = req.user;
-      const { password, ...result } = await User.findOne({
+      const user = await User.findOne({
         where: { id },
         include: [
           {
-            model: Car,
-            attributes: ['id', 'name', 'color', 'manufacturer'],
+            model: School,
+            as: 'school',
+            attributes: ['id', 'name', 'contact_number', 'address'],
           },
         ],
       }).then((res) => (!!res ? res.toJSON() : {}));
+      const { password, school_id, ...result } = user;
+      console.log('result', user);
 
       return result;
     } catch (error) {
@@ -71,5 +75,4 @@ class UserService {
     }
   }
 }
-
 export default new UserService();
