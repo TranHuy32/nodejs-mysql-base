@@ -1,11 +1,17 @@
 import { Model, DataTypes } from 'sequelize';
 
+export const OrderStatus = {
+  PENDING: 'pending',
+  COMPLETED: 'completed',
+  CANCELED: 'canceled',
+};
+
 export default (sequelize) => {
   class Order extends Model {
     static associate(models) {
-      Order.belongsTo(models.User, { foreignKey: 'user_id' }); // Liên kết Order với User
-      Order.belongsTo(models.School, { foreignKey: 'school_id' }); // Liên kết Order với School
-      Order.hasMany(models.OrderItem, { foreignKey: 'order_id' }); // Liên kết Order với OrderItems
+      Order.belongsTo(models.User, { as: 'user', foreignKey: 'user_id' }); // Liên kết Order với User
+      Order.belongsTo(models.School, { as: 'school', foreignKey: 'school_id' }); // Liên kết Order với School
+      Order.hasMany(models.OrderItem, { as: 'orderItems', foreignKey: 'order_id' }); // Liên kết Order với OrderItems
     }
   }
 

@@ -33,6 +33,13 @@ export default (sequelize) => {
           notEmpty: true,
         },
       },
+      unit: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          notEmpty: true,
+        },
+      },
       category_id: {
         type: DataTypes.UUID,
         allowNull: false,
@@ -88,10 +95,10 @@ export default (sequelize) => {
   Product.afterFind(async (products) => {
     if (Array.isArray(products)) {
       products.forEach(product => {
-        product.image_url = getUrl(product.image_url);
+        product.image_url = !!product?.image_url ? getUrl(product.image_url) : null;
       });
     } else if (products && products.image_url) {
-      products.image_url = getUrl(products.image_url);;
+      products.image_url = !!products?.image_url ? getUrl(products.image_url) : null;
     }
   });
 

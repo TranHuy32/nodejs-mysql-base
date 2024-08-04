@@ -70,6 +70,7 @@ class ProductService {
         where: where,
         limit: limit,
         offset: offset,
+        attributes: ['id', 'name', 'image_url', 'price', 'created_at'], // Select specific attributes for Product
         include: [
           {
             model: Category,
