@@ -7,6 +7,7 @@ import CommonService from '../services/commonService';
 import jwt from 'jsonwebtoken';
 
 const User = db.User;
+const School = db.School;
 
 class AuthService {
   async createToken(payload, type) {
@@ -110,23 +111,33 @@ class AuthService {
       if (!!existUser) {
         throw new ApiError('username is existed', StatusCodes.BAD_REQUEST);
       }
-      console.log(1111111111, existUser);
-
-      const userCreated = await User.create({
+      if (role === UserRole.ADMIN) {
+        throw new ApiError('Access Denied', StatusCodes.BAD_REQUEST);
+      }
+      const createUser = {
         name,
         username,
         password,
-        role: UserRole.ADMIN,
-      });
-      console.log(2222222222, userCreated);
-
-      if (!userCreated) {
+        role,
+      };
+      if (role === UserRole.USER) {
+        if (!schoolId) {
+          throw new ApiError('School is required', StatusCodes.BAD_REQUEST);
+        }
+        const existSchool = await School.findByPk(schoolId);
+        if (!existSchool) {
+          throw new ApiError('School is not existed', StatusCodes.BAD_REQUEST);
+        }
+        createUser.school_id = schoolId;
+      }
+      const createdUser = await User.create(createUser);
+      if (!createdUser) {
         throw new ApiError(
           'Error creating user',
           StatusCodes.INTERNAL_SERVER_ERROR,
         );
       }
-      const { password: createdPassword, ...result } = userCreated.get({
+      const { password: createdPassword, ...result } = createdUser.get({
         plain: true,
       });
       return result;

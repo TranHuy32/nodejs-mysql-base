@@ -10,7 +10,7 @@ class SchoolService {
       const { name, address, contact_number } = req.body;
       const school = await School.findOne({
         where: { name, deleted_at: null },
-      })
+      });
 
       if (!!school) {
         throw new ApiError('School is existed', StatusCodes.BAD_REQUEST);
@@ -18,7 +18,7 @@ class SchoolService {
       const schoolCreated = await School.create({
         name,
         address,
-        contact_number
+        contact_number,
       });
 
       return schoolCreated;

@@ -9,14 +9,18 @@ const route = Router();
 const setupRoutes = (app) => {
   app.use('/user', route);
 
-  route.get('/', verifyAccessToken([UserRole.USER]), async (req, res, next) => {
-    try {
-      const result = await UserService.getAll(req);
-      return successHandler(res, 'success', result);
-    } catch (err) {
-      return next(err);
-    }
-  });
+  route.get(
+    '/',
+    verifyAccessToken([UserRole.ADMIN]),
+    async (req, res, next) => {
+      try {
+        const result = await UserService.getAll(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 
   route.get(
     '/detail',
