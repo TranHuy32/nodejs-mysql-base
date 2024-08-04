@@ -3,6 +3,9 @@ import user from './user';
 import auth from './auth';
 import school from './school';
 import origin from './origin';
+import product from './product';
+import category from './category';
+import image from './image';
 
 // Định nghĩa router với Express Router
 const v1 = Router();
@@ -12,5 +15,8 @@ auth(v1);
 user(v1);
 school(v1);
 origin(v1);
+product(v1);
+category(v1);
+image(v1);
 
 export default v1;

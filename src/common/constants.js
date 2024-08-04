@@ -8,3 +8,20 @@ export const UserRole = {
   STAFF: 'staff',
   USER: 'user',
 };
+
+export const UnitEnum = {
+  KG: 'kg',
+  G: 'g',
+  L: 'l',
+  ML: 'ml',
+  M: 'm',
+  CM: 'cm',
+  KHAY: 'khay',
+  CHIEC: 'chiếc',
+  CAI: 'cái',
+  VI: 'vỉ',
+  BICH: 'bịch',
+  GOI: 'gói',
+  CHAI: 'chai',
+  HOP: 'hộp',
+};

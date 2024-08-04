@@ -1,12 +1,13 @@
 import { Model, DataTypes } from 'sequelize';
+import { getUrl } from '../services/imageService';
 
 export default (sequelize) => {
   class Product extends Model {
     static associate(models) {
-      Product.belongsTo(models.Category, { foreignKey: 'category_id' }); // Liên kết Product với Category
-      Product.belongsTo(models.Origin, { foreignKey: 'origin_id' }); // Liên kết Product với Origin
-      Product.hasMany(models.OrderItem, { foreignKey: 'product_id' }); // Liên kết Product với OrderItems
-      Product.hasMany(models.StaffAssignment, { foreignKey: 'product_id' }); // Liên kết Product với StaffAssignments
+      Product.belongsTo(models.Category, { as: 'category', foreignKey: 'category_id' }); // Liên kết Product với Category
+      Product.belongsTo(models.Origin, { as: 'origin', foreignKey: 'origin_id' }); // Liên kết Product với Origin
+      Product.hasMany(models.OrderItem, { as: 'orderItem', foreignKey: 'product_id' }); // Liên kết Product với OrderItems
+      Product.hasMany(models.StaffAssignment, { as: 'staffAssignment', foreignKey: 'product_id' }); // Liên kết Product với StaffAssignments
     }
   }
 
@@ -23,6 +24,13 @@ export default (sequelize) => {
         validate: {
           notEmpty: true,
           len: [2, 100],
+        },
+      },
+      image_url: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+          notEmpty: true,
         },
       },
       category_id: {
@@ -46,14 +54,6 @@ export default (sequelize) => {
         allowNull: false,
         validate: {
           isDecimal: true,
-          min: 0,
-        },
-      },
-      stock_quantity: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        validate: {
-          isInt: true,
           min: 0,
         },
       },
@@ -84,6 +84,16 @@ export default (sequelize) => {
       tableName: 'Products',
     },
   );
+
+  Product.afterFind(async (products) => {
+    if (Array.isArray(products)) {
+      products.forEach(product => {
+        product.image_url = getUrl(product.image_url);
+      });
+    } else if (products && products.image_url) {
+      products.image_url = getUrl(products.image_url);;
+    }
+  });
 
   return Product;
 };

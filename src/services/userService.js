@@ -66,7 +66,6 @@ class UserService {
         ],
       }).then((res) => (!!res ? res.toJSON() : {}));
       const { password, school_id, ...result } = user;
-      console.log('result', user);
 
       return result;
     } catch (error) {

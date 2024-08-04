@@ -2,24 +2,22 @@ import db from '../models';
 import ApiError from '../helpers/ApiError';
 import { StatusCodes } from 'http-status-codes';
 
-const Origin = db.Origin;
+const Category = db.Category;
 
-class OriginService {
+class CategoryService {
   async create(req) {
     try {
-      const { name } = req.body;
-      const origin = await Origin.findOne({
+      const { name, address, contact_number } = req.body;
+      const category = await Category.findOne({
         where: { name, deleted_at: null },
       });
 
-      if (!!origin) {
-        throw new ApiError('Origin is existed', StatusCodes.BAD_REQUEST);
+      if (!!category) {
+        throw new ApiError('Category is existed', StatusCodes.BAD_REQUEST);
       }
-      const originCreated = await Origin.create({
-        name,
-      });
+      const categoryCreated = await Category.create({ name });
 
-      return originCreated;
+      return categoryCreated;
     } catch (error) {
       console.error('error', error);
       throw new ApiError(error.message, error.status);
@@ -32,7 +30,7 @@ class OriginService {
       const limit = parseInt(pageSize, 10);
       const currentPage = parseInt(page, 10);
       const offset = (currentPage - 1) * limit;
-      const { count, rows: origins } = await Origin.findAndCountAll({
+      const { count, rows: categories } = await Category.findAndCountAll({
         limit: limit,
         offset: offset,
       });
@@ -40,7 +38,7 @@ class OriginService {
       const totalPages = Math.ceil(count / limit);
 
       return {
-        docs: origins || [],
+        docs: categories || [],
         paging: {
           totalItems: count,
           totalPages: totalPages,
@@ -55,4 +53,4 @@ class OriginService {
   }
 }
 
-export default new OriginService();
+export default new CategoryService();
