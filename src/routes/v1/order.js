@@ -34,6 +34,19 @@ const setupRoutes = (app) => {
             }
         },
     );
+
+    route.get(
+        '/debt',
+        verifyAccessToken([UserRole.ADMIN, UserRole.USER, UserRole.STAFF]),
+        async (req, res, next) => {
+            try {
+                const result = await OrderService.getDebt(req);
+                return successHandler(res, 'success', result);
+            } catch (err) {
+                return next(err);
+            }
+        },
+    );
 };
 
 export default setupRoutes;

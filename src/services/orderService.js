@@ -1,8 +1,9 @@
 import db from '../models';
 import ApiError from '../helpers/ApiError';
 import { StatusCodes } from 'http-status-codes';
-import { OrderStatus } from '../models/order';
+import { OrderStatus, PayStatus } from '../models/order';
 import { UserRole } from '../common/constants';
+import { Op } from 'sequelize';
 
 const Order = db.Order;
 const OrderItem = db.OrderItem;
@@ -62,7 +63,7 @@ class OrderService {
     async getAll(req) {
         try {
             const { role, school_id } = req.user;
-            const { pageSize = 20, page = 1, status, schoolId } = req.query; // Default limit to 20 and page to 1 if not provided
+            const { pageSize = 20, page = 1, status, schoolId, payStatus, startDate, endDate } = req.query; // Default limit to 20 and page to 1 if not provided
             const limit = parseInt(pageSize, 10);
             const currentPage = parseInt(page, 10);
             const offset = (currentPage - 1) * limit;
@@ -73,6 +74,20 @@ class OrderService {
                 where.status = status; // Filter by order status if provided
             }
 
+            if (payStatus) {
+                where.pay_status = payStatus; // Filter by order status if provided
+            }
+            if (startDate) {
+                const start = new Date(parseInt(startDate, 10));
+                start.setHours(0, 0, 0, 0); // Set to the beginning of the day
+                where.created_at = { ...where.created_at, [Op.gte]: start }; // Filter by start date if provided
+            }
+
+            if (endDate) {
+                const end = new Date(parseInt(endDate, 10));
+                end.setHours(23, 59, 59, 999); // Set to the end of the day
+                where.created_at = { ...where.created_at, [Op.lte]: end }; // Filter by end date if provided
+            }
             // Restrict orders to the current user if not an admin
             if (role === UserRole.USER) {
                 where.school_id = school_id;
@@ -87,7 +102,7 @@ class OrderService {
                 distinct: true,
                 limit: limit,
                 offset: offset,
-                attributes: ['id', 'user_id', 'total_amount', 'status', 'created_at'], // Select specific attributes for Order
+                attributes: ['id', 'user_id', 'total_amount', 'status', 'pay_status', 'created_at'], // Select specific attributes for Order
                 include: [
                     {
                         model: OrderItem,
@@ -126,6 +141,43 @@ class OrderService {
                     pageSize: limit,
                 },
             };
+        } catch (error) {
+            console.error('error', error);
+            throw new ApiError(error.message, error.status || StatusCodes.INTERNAL_SERVER_ERROR);
+        }
+    }
+    getDebt(req) {
+        try {
+            const { role, school_id } = req.user;
+            const { startDate, endDate, schoolId } = req.query;
+
+            // Build the where clause based on the filters
+            const where = {
+                pay_status: PayStatus.PENDING
+            };
+
+            if (startDate) {
+                const start = new Date(parseInt(startDate, 10));
+                start.setHours(0, 0, 0, 0); // Set to the beginning of the day
+                where.created_at = { ...where.created_at, [Op.gte]: start };
+            }
+
+            if (endDate) {
+                const end = new Date(parseInt(endDate, 10));
+                end.setHours(23, 59, 59, 999); // Set to the end of the day
+                where.created_at = { ...where.created_at, [Op.lte]: end };
+            }
+
+            // Restrict orders to the current user's school_id if not an admin
+            if (role === UserRole.USER) {
+                where.school_id = school_id;
+            } else {
+                if (schoolId) {
+                    where.school_id = schoolId;
+                }
+            }
+
+            return Order.sum('total_amount', { where });
         } catch (error) {
             console.error('error', error);
             throw new ApiError(error.message, error.status || StatusCodes.INTERNAL_SERVER_ERROR);

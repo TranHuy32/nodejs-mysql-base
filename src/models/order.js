@@ -6,6 +6,11 @@ export const OrderStatus = {
   CANCELED: 'canceled',
 };
 
+export const PayStatus = {
+  PENDING: 'pending',
+  COMPLETED: 'completed',
+};
+
 export default (sequelize) => {
   class Order extends Model {
     static associate(models) {
@@ -47,7 +52,12 @@ export default (sequelize) => {
         },
       },
       status: {
-        type: DataTypes.ENUM('pending', 'completed', 'canceled'),
+        type: DataTypes.ENUM(...Object.values(OrderStatus)), // Chuyển đổi thành mảng
+        allowNull: false,
+        defaultValue: 'pending',
+      },
+      pay_status: {
+        type: DataTypes.ENUM(...Object.values(PayStatus)), // Chuyển đổi thành mảng
         allowNull: false,
         defaultValue: 'pending',
       },
