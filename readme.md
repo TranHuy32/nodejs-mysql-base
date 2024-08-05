@@ -10,3 +10,8 @@ user: Users;
 
 @Column({ name: 'user_id' })
 user_id: number;
+
+build image:
+docker build -t tranxuanhuy3201/1trieu5:latest .
+push docker hub
+docker push tranxuanhuy3201/1trieu5:latest
