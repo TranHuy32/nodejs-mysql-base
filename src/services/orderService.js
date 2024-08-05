@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes';
 import { OrderStatus, PayStatus } from '../models/order';
 import { UserRole } from '../common/constants';
 import { Op } from 'sequelize';
+import teleBotService from './teleBotService';
 
 const Order = db.Order;
 const OrderItem = db.OrderItem;
@@ -55,7 +56,7 @@ class OrderService {
 
       // Commit the transaction
       await transaction.commit();
-
+      teleBotService.sendMessage(order.toJSON());
       return order;
     } catch (error) {
       // Rollback the transaction in case of an error
