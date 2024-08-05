@@ -7,46 +7,55 @@ import { UserRole } from '../../common/constants';
 const route = Router();
 
 const setupRoutes = (app) => {
-    app.use('/order', route);
+  app.use('/order', route);
 
-    route.post(
-        '',
-        verifyAccessToken([UserRole.USER]),
-        async (req, res, next) => {
-            try {
-                const result = await OrderService.create(req);
-                return successHandler(res, 'success', result);
-            } catch (err) {
-                return next(err);
-            }
-        },
-    );
+  route.post('', verifyAccessToken([UserRole.USER]), async (req, res, next) => {
+    try {
+      const result = await OrderService.create(req);
+      return successHandler(res, 'success', result);
+    } catch (err) {
+      return next(err);
+    }
+  });
 
-    route.get(
-        '',
-        verifyAccessToken([UserRole.ADMIN, UserRole.USER, UserRole.STAFF]),
-        async (req, res, next) => {
-            try {
-                const result = await OrderService.getAll(req);
-                return successHandler(res, 'success', result);
-            } catch (err) {
-                return next(err);
-            }
-        },
-    );
+  route.get(
+    '',
+    verifyAccessToken([UserRole.ADMIN, UserRole.USER, UserRole.STAFF]),
+    async (req, res, next) => {
+      try {
+        const result = await OrderService.getAll(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 
-    route.get(
-        '/debt',
-        verifyAccessToken([UserRole.ADMIN, UserRole.USER, UserRole.STAFF]),
-        async (req, res, next) => {
-            try {
-                const result = await OrderService.getDebt(req);
-                return successHandler(res, 'success', result);
-            } catch (err) {
-                return next(err);
-            }
-        },
-    );
+  route.get(
+    '/debt',
+    verifyAccessToken([UserRole.ADMIN, UserRole.USER, UserRole.STAFF]),
+    async (req, res, next) => {
+      try {
+        const result = await OrderService.getDebt(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
+
+  route.get(
+    '/buy',
+    verifyAccessToken([UserRole.ADMIN, UserRole.STAFF]),
+    async (req, res, next) => {
+      try {
+        const result = await OrderService.allProductsNeedToBuy(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 };
 
 export default setupRoutes;

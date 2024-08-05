@@ -7,11 +7,9 @@ module.exports = {
       allowNull: false,
       defaultValue: 'pending',
     });
-
   },
 
   async down(queryInterface, Sequelize) {
     await queryInterface.removeColumn('Orders', 'pay_status');
-
   },
 };

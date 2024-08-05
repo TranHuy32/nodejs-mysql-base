@@ -31,10 +31,10 @@ export default (sequelize) => {
           key: 'id',
         },
       },
-      status: {
-        type: DataTypes.ENUM('pending', 'in-progress', 'completed'),
+      assign_date: {
+        type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: 'pending',
+        defaultValue: DataTypes.NOW,
       },
       created_at: {
         type: DataTypes.DATE,

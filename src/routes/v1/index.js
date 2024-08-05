@@ -7,6 +7,7 @@ import product from './product';
 import category from './category';
 import image from './image';
 import order from './order';
+import staffAssignment from './staffAssignment';
 
 // Định nghĩa router với Express Router
 const v1 = Router();
@@ -20,5 +21,6 @@ product(v1);
 category(v1);
 image(v1);
 order(v1);
+staffAssignment(v1);
 
 export default v1;

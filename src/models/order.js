@@ -16,7 +16,10 @@ export default (sequelize) => {
     static associate(models) {
       Order.belongsTo(models.User, { as: 'user', foreignKey: 'user_id' }); // Liên kết Order với User
       Order.belongsTo(models.School, { as: 'school', foreignKey: 'school_id' }); // Liên kết Order với School
-      Order.hasMany(models.OrderItem, { as: 'orderItems', foreignKey: 'order_id' }); // Liên kết Order với OrderItems
+      Order.hasMany(models.OrderItem, {
+        as: 'orderItems',
+        foreignKey: 'order_id',
+      }); // Liên kết Order với OrderItems
     }
   }
 

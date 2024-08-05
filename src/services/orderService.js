@@ -12,176 +12,293 @@ const User = db.User;
 const School = db.School;
 
 class OrderService {
-    async create(req) {
-        const transaction = await db.sequelize.transaction();
-        try {
-            const { totalAmount, products } = req.body;
-            const { id, school_id } = req.user;
+  async create(req) {
+    const transaction = await db.sequelize.transaction();
+    try {
+      const { totalAmount, products } = req.body;
+      const { id, school_id } = req.user;
 
-            // Validate order data
-            if (!products || products.length === 0) {
-                throw new ApiError('Order items are required', StatusCodes.BAD_REQUEST);
-            }
+      // Validate order data
+      if (!products || products.length === 0) {
+        throw new ApiError('Order items are required', StatusCodes.BAD_REQUEST);
+      }
 
-            // Create a new order record within the transaction
-            const order = await Order.create({
-                user_id: id,
-                total_amount: totalAmount,
-                status: OrderStatus.PENDING,
-                school_id: school_id
-            }, { transaction });
+      // Create a new order record within the transaction
+      const order = await Order.create(
+        {
+          user_id: id,
+          total_amount: totalAmount,
+          status: OrderStatus.PENDING,
+          school_id: school_id,
+        },
+        { transaction },
+      );
 
-            // Create order items within the transaction
-            const orderItems = await Promise.all(products.map(async (product) => {
+      // Create order items within the transaction
+      const orderItems = await Promise.all(
+        products.map(async (product) => {
+          const existedProduct = await Product.findByPk(product.productId);
 
-                const existedProduct = await Product.findByPk(product.productId);
+          if (!existedProduct) {
+            throw new ApiError('Product not found', StatusCodes.BAD_REQUEST);
+          }
+          return {
+            order_id: order.id,
+            product_id: product.productId,
+            quantity: product.quantity,
+            price: existedProduct.price,
+          };
+        }),
+      );
 
-                if (!existedProduct) {
-                    throw new ApiError('Product not found', StatusCodes.BAD_REQUEST);
-                }
-                return {
-                    order_id: order.id,
-                    product_id: product.productId,
-                    quantity: product.quantity,
-                    price: existedProduct.price,
-                }
-            }))
+      await OrderItem.bulkCreate(orderItems, { transaction });
 
-            await OrderItem.bulkCreate(orderItems, { transaction });
+      // Commit the transaction
+      await transaction.commit();
 
-            // Commit the transaction
-            await transaction.commit();
-
-            return order;
-        } catch (error) {
-            // Rollback the transaction in case of an error
-            await transaction.rollback();
-            console.error('error', error);
-            throw new ApiError(error.message, error.status || StatusCodes.INTERNAL_SERVER_ERROR);
-        }
+      return order;
+    } catch (error) {
+      // Rollback the transaction in case of an error
+      await transaction.rollback();
+      console.error('error', error);
+      throw new ApiError(
+        error.message,
+        error.status || StatusCodes.INTERNAL_SERVER_ERROR,
+      );
     }
-    async getAll(req) {
-        try {
-            const { role, school_id } = req.user;
-            const { pageSize = 20, page = 1, status, schoolId, payStatus, startDate, endDate } = req.query; // Default limit to 20 and page to 1 if not provided
-            const limit = parseInt(pageSize, 10);
-            const currentPage = parseInt(page, 10);
-            const offset = (currentPage - 1) * limit;
+  }
+  async getAll(req) {
+    try {
+      const { role, school_id } = req.user;
+      const {
+        pageSize = 20,
+        page = 1,
+        status,
+        schoolId,
+        payStatus,
+        startDate,
+        endDate,
+      } = req.query; // Default limit to 20 and page to 1 if not provided
+      const limit = parseInt(pageSize, 10);
+      const currentPage = parseInt(page, 10);
+      const offset = (currentPage - 1) * limit;
 
-            // Build the where clause based on the filters
-            const where = {};
-            if (status) {
-                where.status = status; // Filter by order status if provided
-            }
+      // Build the where clause based on the filters
+      const where = {};
+      if (status) {
+        where.status = status; // Filter by order status if provided
+      }
 
-            if (payStatus) {
-                where.pay_status = payStatus; // Filter by order status if provided
-            }
-            if (startDate) {
-                const start = new Date(parseInt(startDate, 10));
-                start.setHours(0, 0, 0, 0); // Set to the beginning of the day
-                where.created_at = { ...where.created_at, [Op.gte]: start }; // Filter by start date if provided
-            }
+      if (payStatus) {
+        where.pay_status = payStatus; // Filter by order status if provided
+      }
+      if (startDate) {
+        const start = new Date(parseInt(startDate, 10));
+        start.setHours(0, 0, 0, 0); // Set to the beginning of the day
+        where.created_at = { ...where.created_at, [Op.gte]: start }; // Filter by start date if provided
+      }
 
-            if (endDate) {
-                const end = new Date(parseInt(endDate, 10));
-                end.setHours(23, 59, 59, 999); // Set to the end of the day
-                where.created_at = { ...where.created_at, [Op.lte]: end }; // Filter by end date if provided
-            }
-            // Restrict orders to the current user if not an admin
-            if (role === UserRole.USER) {
-                where.school_id = school_id;
-            } else {
-                if (!!schoolId) {
-                    where.school_id = schoolId;
-                }
-            }
+      if (endDate) {
+        const end = new Date(parseInt(endDate, 10));
+        end.setHours(23, 59, 59, 999); // Set to the end of the day
+        where.created_at = { ...where.created_at, [Op.lte]: end }; // Filter by end date if provided
+      }
+      // Restrict orders to the current user if not an admin
+      if (role === UserRole.USER) {
+        where.school_id = school_id;
+      } else {
+        if (!!schoolId) {
+          where.school_id = schoolId;
+        }
+      }
 
-            const { count, rows: orders } = await Order.findAndCountAll({
-                where: where,
-                distinct: true,
-                limit: limit,
-                offset: offset,
-                attributes: ['id', 'user_id', 'total_amount', 'status', 'pay_status', 'created_at'], // Select specific attributes for Order
-                include: [
-                    {
-                        model: OrderItem,
-                        as: 'orderItems',
-                        attributes: ['quantity', 'price'],
-                        include: [
-                            {
-                                model: Product,
-                                as: 'product',
-                                attributes: ['id', 'name', 'unit'],
-                            },
-                        ],
-                    },
-                    {
-                        model: User,
-                        as: 'user',
-                        attributes: ['id', 'name'],
-                    },
-                    {
-                        model: School,
-                        as: 'school',
-                        attributes: ['id', 'name'],
-                    },
-                ],
-                order: [['created_at', 'DESC']],
-            });
+      const { count, rows: orders } = await Order.findAndCountAll({
+        where: where,
+        distinct: true,
+        limit: limit,
+        offset: offset,
+        attributes: [
+          'id',
+          'user_id',
+          'total_amount',
+          'status',
+          'pay_status',
+          'created_at',
+        ], // Select specific attributes for Order
+        include: [
+          {
+            model: OrderItem,
+            as: 'orderItems',
+            attributes: ['quantity', 'price'],
+            include: [
+              {
+                model: Product,
+                as: 'product',
+                attributes: ['id', 'name', 'unit'],
+              },
+            ],
+          },
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'name'],
+          },
+          {
+            model: School,
+            as: 'school',
+            attributes: ['id', 'name'],
+          },
+        ],
+        order: [['created_at', 'DESC']],
+      });
 
-            const totalPages = Math.ceil(count / limit);
+      const totalPages = Math.ceil(count / limit);
 
-            return {
-                docs: orders || [],
-                paging: {
-                    totalItems: count,
-                    totalPages: totalPages,
-                    currentPage: currentPage,
-                    pageSize: limit,
-                },
+      return {
+        docs: orders || [],
+        paging: {
+          totalItems: count,
+          totalPages: totalPages,
+          currentPage: currentPage,
+          pageSize: limit,
+        },
+      };
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(
+        error.message,
+        error.status || StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getDebt(req) {
+    try {
+      const { role, school_id } = req.user;
+      const { startDate, endDate, schoolId } = req.query;
+
+      // Build the where clause based on the filters
+      const where = {
+        pay_status: PayStatus.PENDING,
+      };
+
+      if (startDate) {
+        const start = new Date(parseInt(startDate, 10));
+        start.setHours(0, 0, 0, 0); // Set to the beginning of the day
+        where.created_at = { ...where.created_at, [Op.gte]: start };
+      }
+
+      if (endDate) {
+        const end = new Date(parseInt(endDate, 10));
+        end.setHours(23, 59, 59, 999); // Set to the end of the day
+        where.created_at = { ...where.created_at, [Op.lte]: end };
+      }
+
+      // Restrict orders to the current user's school_id if not an admin
+      if (role === UserRole.USER) {
+        where.school_id = school_id;
+      } else {
+        if (schoolId) {
+          where.school_id = schoolId;
+        }
+      }
+
+      const orders = await Order.findAll({
+        attributes: ['total_amount'],
+        where,
+      });
+
+      if (orders.length === 0) {
+        return { debt: 0 };
+      }
+
+      const totalDebt = orders.reduce(
+        (sum, order) => sum + +order.total_amount,
+        0,
+      );
+
+      return { debt: totalDebt };
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(
+        error.message,
+        error.status || StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async allProductsNeedToBuy(req) {
+    try {
+      const { startDate, endDate, schoolId, status } = req.query;
+      const where = {};
+
+      if (!!status) {
+        where.status = status;
+      }
+
+      if (startDate) {
+        const start = new Date(parseInt(startDate, 10));
+        start.setHours(0, 0, 0, 0); // Set to the beginning of the day
+        where.created_at = { ...where.created_at, [Op.gte]: start };
+      }
+
+      if (endDate) {
+        const end = new Date(parseInt(endDate, 10));
+        end.setHours(23, 59, 59, 999); // Set to the end of the day
+        where.created_at = { ...where.created_at, [Op.lte]: end };
+      }
+
+      if (schoolId) {
+        where.school_id = schoolId;
+      }
+
+      const orders = await Order.findAll({
+        where,
+        include: [
+          {
+            model: OrderItem,
+            as: 'orderItems',
+            attributes: ['quantity'],
+            include: [
+              {
+                model: Product,
+                as: 'product',
+                attributes: ['id', 'name', 'unit'],
+              },
+            ],
+          },
+        ],
+      });
+
+      if (orders.length === 0) {
+        return { products: [] };
+      }
+
+      const productStats = {};
+
+      orders.forEach((order) => {
+        order.orderItems.forEach((orderItem) => {
+          const product = orderItem.product;
+          if (!productStats[product.id]) {
+            productStats[product.id] = {
+              id: product.id,
+              name: product.name,
+              quantity: 0,
+              unit: product.unit,
             };
-        } catch (error) {
-            console.error('error', error);
-            throw new ApiError(error.message, error.status || StatusCodes.INTERNAL_SERVER_ERROR);
-        }
+          }
+          productStats[product.id].quantity += orderItem.quantity;
+        });
+      });
+
+      return { products: Object.values(productStats) };
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(
+        error.message,
+        error.status || StatusCodes.INTERNAL_SERVER_ERROR,
+      );
     }
-    getDebt(req) {
-        try {
-            const { role, school_id } = req.user;
-            const { startDate, endDate, schoolId } = req.query;
-
-            // Build the where clause based on the filters
-            const where = {
-                pay_status: PayStatus.PENDING
-            };
-
-            if (startDate) {
-                const start = new Date(parseInt(startDate, 10));
-                start.setHours(0, 0, 0, 0); // Set to the beginning of the day
-                where.created_at = { ...where.created_at, [Op.gte]: start };
-            }
-
-            if (endDate) {
-                const end = new Date(parseInt(endDate, 10));
-                end.setHours(23, 59, 59, 999); // Set to the end of the day
-                where.created_at = { ...where.created_at, [Op.lte]: end };
-            }
-
-            // Restrict orders to the current user's school_id if not an admin
-            if (role === UserRole.USER) {
-                where.school_id = school_id;
-            } else {
-                if (schoolId) {
-                    where.school_id = schoolId;
-                }
-            }
-
-            return Order.sum('total_amount', { where });
-        } catch (error) {
-            console.error('error', error);
-            throw new ApiError(error.message, error.status || StatusCodes.INTERNAL_SERVER_ERROR);
-        }
-    }
+  }
 }
 export default new OrderService();

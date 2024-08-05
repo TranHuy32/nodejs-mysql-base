@@ -101,7 +101,6 @@ class ProductService {
       throw new ApiError(error.message, error.status);
     }
   }
-
 }
 
 export default new ProductService();

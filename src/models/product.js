@@ -4,10 +4,22 @@ import { getUrl } from '../services/imageService';
 export default (sequelize) => {
   class Product extends Model {
     static associate(models) {
-      Product.belongsTo(models.Category, { as: 'category', foreignKey: 'category_id' }); // Liên kết Product với Category
-      Product.belongsTo(models.Origin, { as: 'origin', foreignKey: 'origin_id' }); // Liên kết Product với Origin
-      Product.hasMany(models.OrderItem, { as: 'orderItem', foreignKey: 'product_id' }); // Liên kết Product với OrderItems
-      Product.hasMany(models.StaffAssignment, { as: 'staffAssignment', foreignKey: 'product_id' }); // Liên kết Product với StaffAssignments
+      Product.belongsTo(models.Category, {
+        as: 'category',
+        foreignKey: 'category_id',
+      }); // Liên kết Product với Category
+      Product.belongsTo(models.Origin, {
+        as: 'origin',
+        foreignKey: 'origin_id',
+      }); // Liên kết Product với Origin
+      Product.hasMany(models.OrderItem, {
+        as: 'orderItem',
+        foreignKey: 'product_id',
+      }); // Liên kết Product với OrderItems
+      Product.hasMany(models.StaffAssignment, {
+        as: 'staffAssignment',
+        foreignKey: 'product_id',
+      }); // Liên kết Product với StaffAssignments
     }
   }
 
@@ -94,11 +106,15 @@ export default (sequelize) => {
 
   Product.afterFind(async (products) => {
     if (Array.isArray(products)) {
-      products.forEach(product => {
-        product.image_url = !!product?.image_url ? getUrl(product.image_url) : null;
+      products.forEach((product) => {
+        product.image_url = !!product?.image_url
+          ? getUrl(product.image_url)
+          : null;
       });
     } else if (products && products.image_url) {
-      products.image_url = !!products?.image_url ? getUrl(products.image_url) : null;
+      products.image_url = !!products?.image_url
+        ? getUrl(products.image_url)
+        : null;
     }
   });
 
