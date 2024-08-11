@@ -8,5 +8,5 @@ export const serveImage = (req, res) => {
 };
 
 export const getUrl = (filename) => {
-  return `http://${HOST}:${PORT}/images/${filename}`;
+  return `http://${HOST}:${PORT}/v1/images/${filename}`;
 };

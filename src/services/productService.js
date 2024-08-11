@@ -83,6 +83,7 @@ class ProductService {
             attributes: ['id', 'name'],
           },
         ],
+        order: [['created_at', 'DESC']], // Sort by created_at in descending order
       });
 
       const totalPages = Math.ceil(count / limit);
@@ -102,5 +103,4 @@ class ProductService {
     }
   }
 }
-
 export default new ProductService();
