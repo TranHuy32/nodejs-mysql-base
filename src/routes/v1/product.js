@@ -16,6 +16,8 @@ const setupRoutes = (app) => {
     upload.single('image'),
     async (req, res, next) => {
       try {
+        console.log('req.file', req.file);
+        console.log('req.body', req.body);
         const result = await ProductService.create(req);
         return successHandler(res, 'success', result);
       } catch (err) {
