@@ -3,7 +3,7 @@ import { Model, DataTypes } from 'sequelize';
 export default (sequelize) => {
   class StaffAssignment extends Model {
     static associate(models) {
-      StaffAssignment.belongsTo(models.User, { foreignKey: 'staff_id' }); // Liên kết StaffAssignment với User
+      StaffAssignment.belongsTo(models.User, { as: 'user', foreignKey: 'staff_id' }); // Liên kết StaffAssignment với User
       StaffAssignment.belongsTo(models.Product, { foreignKey: 'product_id' }); // Liên kết StaffAssignment với Product
     }
   }

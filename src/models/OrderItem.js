@@ -41,8 +41,8 @@ export default (sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
-          isInt: true,
-          min: 1,
+          isDecimal: true, // Updated validation to allow decimal values
+          min: 0.01, // Minimum value set to 0.01 to allow fractional quantities
         },
       },
       price: {

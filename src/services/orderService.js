@@ -6,11 +6,8 @@ import { UserRole } from '../common/constants';
 import { Op } from 'sequelize';
 import teleBotService from './teleBotService';
 
-const Order = db.Order;
-const OrderItem = db.OrderItem;
-const Product = db.Product;
-const User = db.User;
-const School = db.School;
+
+const { Order, OrderItem, Product, User, School, StaffAssignment } = db;
 
 class OrderService {
   async create(req) {
@@ -230,24 +227,22 @@ class OrderService {
 
   async allProductsNeedToBuy(req) {
     try {
-      const { startDate, endDate, schoolId, status } = req.query;
+      const { date, schoolId, status } = req.query;
       const where = {};
 
       if (!!status) {
         where.status = status;
       }
 
-      if (startDate) {
-        const start = new Date(parseInt(startDate, 10));
-        start.setHours(0, 0, 0, 0); // Set to the beginning of the day
-        where.created_at = { ...where.created_at, [Op.gte]: start };
-      }
-
-      if (endDate) {
-        const end = new Date(parseInt(endDate, 10));
-        end.setHours(23, 59, 59, 999); // Set to the end of the day
-        where.created_at = { ...where.created_at, [Op.lte]: end };
-      }
+      // Set date to today's date if not provided
+      const targetDate = date ? new Date(parseInt(date, 10)) : new Date();
+      targetDate.setHours(0, 0, 0, 0); // Set to the beginning of the day
+      const endOfDay = new Date(targetDate);
+      endOfDay.setHours(23, 59, 59, 999); // Set to the end of the day
+      where.created_at = {
+        [Op.gte]: targetDate,
+        [Op.lte]: endOfDay,
+      };
 
       if (schoolId) {
         where.school_id = schoolId;
@@ -275,6 +270,35 @@ class OrderService {
         return { products: [] };
       }
 
+      const staffAssignment = await StaffAssignment.findAll({
+        attributes: ['id', 'product_id', 'staff_id', 'assign_date'], // Changed 'select' to 'attributes'
+        where: {
+          assign_date: {
+            [Op.gte]: targetDate,
+            [Op.lte]: endOfDay,
+          }
+        },
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'name'],
+          },
+        ],
+      });
+      const staffAssignmentMap = staffAssignment.map(assignment => {
+        return {
+          product_id: assignment.product_id,
+          user: assignment.user
+        };
+      }).reduce((acc, { product_id, user }) => {
+        if (!acc[product_id]) {
+          acc[product_id] = [];
+        }
+        acc[product_id] = (!!user ? user.toJSON() : null);
+        return acc;
+      }, {});
+
       const productStats = {};
 
       orders.forEach((order) => {
@@ -286,9 +310,10 @@ class OrderService {
               name: product.name,
               quantity: 0,
               unit: product.unit,
+              staff: staffAssignmentMap[product.id] || null, // Ensure staff is assigned correctly
             };
           }
-          productStats[product.id].quantity += orderItem.quantity;
+          productStats[product.id].quantity += +orderItem.quantity;
         });
       });
 
