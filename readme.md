@@ -11,6 +11,11 @@ user: Users;
 @Column({ name: 'user_id' })
 user_id: number;
 
+//update db
+λ npx sequelize-cli migration:generate --name update-staff-assignment
+// run update
+λ npx sequelize-cli db:migrate
+
 build image:
 docker build -t tranxuanhuy3201/1trieu5:latest .
 push docker hub

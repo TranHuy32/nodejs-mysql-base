@@ -22,7 +22,7 @@ const setupRoutes = (app) => {
     },
   );
 
-  route.get('', verifyAccessToken([UserRole.ADMIN]), async (req, res, next) => {
+  route.get('', verifyAccessToken([UserRole.ADMIN, UserRole.STAFF, UserRole.USER]), async (req, res, next) => {
     try {
       const result = await CategoryService.getAll(req);
       return successHandler(res, 'success', result);

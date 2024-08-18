@@ -3,15 +3,15 @@ import ApiError from '../helpers/ApiError';
 import { StatusCodes } from 'http-status-codes';
 import { UnitEnum } from '../common/constants';
 
-const { Product, Category, Origin } = db;
+const { Product, Category } = db;
 
 class ProductService {
   async create(req) {
     const { body, file } = req;
-    const { name, unit, price, categoryId, originId } = body;
+    const { name, unit, price, categoryId } = body;
 
     // Kiểm tra các trường bắt buộc
-    if (!name || !unit || !price || !categoryId || !originId) {
+    if (!name || !unit || !price || !categoryId) {
       throw new ApiError('Missing required fields', StatusCodes.BAD_REQUEST);
     }
 
@@ -20,24 +20,17 @@ class ProductService {
       throw new ApiError('Invalid unit', StatusCodes.BAD_REQUEST);
     }
 
-    // Kiểm tra xem categoryId và originId có tồn tại không
+    // Kiểm tra xem categoryId có tồn tại không
     const category = await Category.findByPk(categoryId);
     if (!category) {
       throw new ApiError('Category does not exist', StatusCodes.BAD_REQUEST);
     }
-
-    const origin = await Origin.findByPk(originId);
-    if (!origin) {
-      throw new ApiError('Origin does not exist', StatusCodes.BAD_REQUEST);
-    }
-
     try {
       const productData = {
         name,
         unit,
         price: +price,
         category_id: categoryId,
-        origin_id: originId,
         image_url: file ? file.filename : null,
       };
 
@@ -52,7 +45,7 @@ class ProductService {
 
   async getAll(req) {
     try {
-      const { pageSize = 20, page = 1, categoryId, originId } = req.query; // Default limit to 20 and page to 1 if not provided
+      const { pageSize = 20, page = 1, categoryId } = req.query; // Default limit to 20 and page to 1 if not provided
       const limit = parseInt(pageSize, 10);
       const currentPage = parseInt(page, 10);
       const offset = (currentPage - 1) * limit;
@@ -62,10 +55,6 @@ class ProductService {
       if (categoryId) {
         where.category_id = categoryId; // Assuming category is referenced by categoryId
       }
-      if (originId) {
-        where.origin_id = originId; // Assuming origin is referenced by originId
-      }
-
       const { count, rows: products } = await Product.findAndCountAll({
         where: where,
         limit: limit,
@@ -75,11 +64,6 @@ class ProductService {
           {
             model: Category,
             as: 'category',
-            attributes: ['id', 'name'],
-          },
-          {
-            model: Origin,
-            as: 'origin',
             attributes: ['id', 'name'],
           },
         ],

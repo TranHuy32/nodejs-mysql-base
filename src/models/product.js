@@ -8,10 +8,6 @@ export default (sequelize) => {
         as: 'category',
         foreignKey: 'category_id',
       }); // Liên kết Product với Category
-      Product.belongsTo(models.Origin, {
-        as: 'origin',
-        foreignKey: 'origin_id',
-      }); // Liên kết Product với Origin
       Product.hasMany(models.OrderItem, {
         as: 'orderItem',
         foreignKey: 'product_id',
@@ -57,14 +53,6 @@ export default (sequelize) => {
         allowNull: false,
         references: {
           model: 'Categories',
-          key: 'id',
-        },
-      },
-      origin_id: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: 'Origins',
           key: 'id',
         },
       },

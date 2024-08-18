@@ -26,6 +26,6 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
-});
+}).array('images', 10); // Accept up to 10 files, adjust as needed
 
 export default upload;

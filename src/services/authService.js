@@ -39,9 +39,15 @@ class AuthService {
   async login(req) {
     try {
       const { username, password } = req.body;
-
       const user = await User.findOne({
         where: { username, deleted_at: null },
+        include: [
+          {
+            model: School,
+            as: 'school',
+            attributes: ['name'],
+          },
+        ],
       });
       if (!user) {
         throw new ApiError(
@@ -50,8 +56,8 @@ class AuthService {
         );
       }
 
-      const { password: hashedPassword, ...payload } = user.toJSON();
-
+      const { password: hashedPassword, school, ...payload } = user.toJSON();
+      payload.schoolName = school?.name
       const valid = bcrypt.compareSync(password, hashedPassword);
       if (!valid) {
         throw new ApiError(
