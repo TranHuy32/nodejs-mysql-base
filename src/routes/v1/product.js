@@ -16,6 +16,9 @@ const setupRoutes = (app) => {
     upload, // Use the array upload configuration
     async (req, res, next) => {
       try {
+        if (req.files && req.files.length > 0) {
+          req.file = req.files[0]; // Pick the first file
+        } 
         console.log('req.file', req.file);
         console.log('req.body', req.body);
         const result = await ProductService.create(req);
