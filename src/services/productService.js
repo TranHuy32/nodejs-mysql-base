@@ -86,5 +86,23 @@ class ProductService {
       throw new ApiError(error.message, error.status);
     }
   }
+  
+  async deleteProduct(req) {
+    const { id } = req.body;
+    const product = await Product.findOne({ where: { id, deleted_at: null } });
+    if (!product) {
+      throw new ApiError('Product not found', StatusCodes.BAD_REQUEST);
+    }
+    try {
+      await Product.update(
+        { deleted_at: new Date() },
+        { where: { id } }
+      );
+      return product;
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      throw new ApiError('Failed to delete product', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
 export default new ProductService();

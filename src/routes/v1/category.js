@@ -30,6 +30,15 @@ const setupRoutes = (app) => {
       return next(err);
     }
   });
+
+  route.patch('', verifyAccessToken([UserRole.ADMIN]), async (req, res, next) => {
+    try {
+      const result = await CategoryService.updateCategory(req);
+      return successHandler(res, 'success', result);
+    } catch (err) {
+      return next(err);
+    }
+  });
 };
 
 export default setupRoutes;

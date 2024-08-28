@@ -91,13 +91,15 @@ class OrderService {
         where.pay_status = payStatus; // Filter by order status if provided
       }
       if (startDate) {
-        const start = new Date(parseInt(startDate, 10));
+        const start = new Date(parseInt(startDate, 10));        
+        start.setHours(start.getHours() - 7); // Convert to UTC by subtracting 7 hours
         start.setHours(0, 0, 0, 0); // Set to the beginning of the day
         where.created_at = { ...where.created_at, [Op.gte]: start }; // Filter by start date if provided
       }
 
       if (endDate) {
         const end = new Date(parseInt(endDate, 10));
+        end.setHours(end.getHours() - 7); // Convert to UTC by subtracting 7 hours
         end.setHours(23, 59, 59, 999); // Set to the end of the day
         where.created_at = { ...where.created_at, [Op.lte]: end }; // Filter by end date if provided
       }
@@ -182,12 +184,14 @@ class OrderService {
 
       if (startDate) {
         const start = new Date(parseInt(startDate, 10));
+        start.setHours(start.getHours() - 7); // Convert to UTC by subtracting 7 hours
         start.setHours(0, 0, 0, 0); // Set to the beginning of the day
         where.created_at = { ...where.created_at, [Op.gte]: start };
       }
 
       if (endDate) {
         const end = new Date(parseInt(endDate, 10));
+        end.setHours(end.getHours() - 7); // Convert to UTC by subtracting 7 hours
         end.setHours(23, 59, 59, 999); // Set to the end of the day
         where.created_at = { ...where.created_at, [Op.lte]: end };
       }

@@ -34,6 +34,19 @@ const setupRoutes = (app) => {
       }
     },
   );
+
+  // route.patch(
+  //   '',
+  //   verifyAccessToken([UserRole.ADMIN, UserRole.STAFF, UserRole.USER]),
+  //   async (req, res, next) => {
+  //     try {
+  //       const result = await UserService.updateUser(req);
+  //       return successHandler(res, 'success', result);
+  //     } catch (err) {
+  //       return next(err);
+  //     }
+  //   },
+  // );
 };
 
 export default setupRoutes;

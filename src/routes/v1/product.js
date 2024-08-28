@@ -41,6 +41,19 @@ const setupRoutes = (app) => {
       }
     },
   );
+
+  route.delete(
+    '',
+    verifyAccessToken([UserRole.ADMIN]),
+    async (req, res, next) => {
+      try {
+        const result = await ProductService.deleteProduct(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 };
 
 export default setupRoutes;

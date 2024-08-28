@@ -51,6 +51,26 @@ class CategoryService {
       throw new ApiError(error.message, error.status);
     }
   }
-}
 
+  async updateCategory(req) {
+    try {
+      const { id, name } = req.body;
+      const category = await Category.findOne({
+        where: { id, deleted_at: null },
+      });
+
+      if (!category) {
+        throw new ApiError('Category not found', StatusCodes.BAD_REQUEST);
+      }
+
+      category.name = name;
+      await category.save();
+
+      return category;
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(error.message, error.status);
+    }
+  }
+}
 export default new CategoryService();
