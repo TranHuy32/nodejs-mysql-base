@@ -58,7 +58,12 @@ class CategoryService {
       const category = await Category.findOne({
         where: { id, deleted_at: null },
       });
-
+      const categoryExist = await Category.findOne({
+        where: { name, deleted_at: null },
+      });
+      if (!!categoryExist) {
+        throw new ApiError('Category is existed', StatusCodes.BAD_REQUEST);
+      }
       if (!category) {
         throw new ApiError('Category not found', StatusCodes.BAD_REQUEST);
       }

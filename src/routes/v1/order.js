@@ -56,6 +56,45 @@ const setupRoutes = (app) => {
       }
     },
   );
+
+  route.get(
+    '/revenue',
+    verifyAccessToken([UserRole.ADMIN, UserRole.STAFF]),
+    async (req, res, next) => {
+      try {
+        const result = await OrderService.revenue(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
+
+  route.get(
+    '/statistical',
+    verifyAccessToken([UserRole.ADMIN, UserRole.STAFF]),
+    async (req, res, next) => {
+      try {
+        const result = await OrderService.statistical(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
+
+  route.patch(
+    '/pay/:id',
+    verifyAccessToken([UserRole.ADMIN, UserRole.STAFF]),
+    async (req, res, next) => {
+      try {
+        const result = await OrderService.pay(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 };
 
 export default setupRoutes;

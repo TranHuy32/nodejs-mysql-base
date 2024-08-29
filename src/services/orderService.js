@@ -6,7 +6,6 @@ import { UserRole } from '../common/constants';
 import { Op } from 'sequelize';
 import teleBotService from './teleBotService';
 
-
 const { Order, OrderItem, Product, User, School, StaffAssignment } = db;
 
 class OrderService {
@@ -91,7 +90,7 @@ class OrderService {
         where.pay_status = payStatus; // Filter by order status if provided
       }
       if (startDate) {
-        const start = new Date(parseInt(startDate, 10));        
+        const start = new Date(parseInt(startDate, 10));
         start.setHours(start.getHours() - 7); // Convert to UTC by subtracting 7 hours
         start.setHours(0, 0, 0, 0); // Set to the beginning of the day
         where.created_at = { ...where.created_at, [Op.gte]: start }; // Filter by start date if provided
@@ -240,6 +239,7 @@ class OrderService {
 
       // Set date to today's date if not provided
       const targetDate = date ? new Date(parseInt(date, 10)) : new Date();
+      targetDate.setHours(targetDate.getHours() - 7);
       targetDate.setHours(0, 0, 0, 0); // Set to the beginning of the day
       const endOfDay = new Date(targetDate);
       endOfDay.setHours(23, 59, 59, 999); // Set to the end of the day
@@ -280,7 +280,7 @@ class OrderService {
           assign_date: {
             [Op.gte]: targetDate,
             [Op.lte]: endOfDay,
-          }
+          },
         },
         include: [
           {
@@ -290,18 +290,20 @@ class OrderService {
           },
         ],
       });
-      const staffAssignmentMap = staffAssignment.map(assignment => {
-        return {
-          product_id: assignment.product_id,
-          user: assignment.user
-        };
-      }).reduce((acc, { product_id, user }) => {
-        if (!acc[product_id]) {
-          acc[product_id] = [];
-        }
-        acc[product_id] = (!!user ? user.toJSON() : null);
-        return acc;
-      }, {});
+      const staffAssignmentMap = staffAssignment
+        .map((assignment) => {
+          return {
+            product_id: assignment.product_id,
+            user: assignment.user,
+          };
+        })
+        .reduce((acc, { product_id, user }) => {
+          if (!acc[product_id]) {
+            acc[product_id] = [];
+          }
+          acc[product_id] = !!user ? user.toJSON() : null;
+          return acc;
+        }, {});
 
       const productStats = {};
 
@@ -330,5 +332,179 @@ class OrderService {
       );
     }
   }
+
+  async revenue(req) {
+    try {
+      let { year } = req.query;
+
+      if (!year) {
+        year = new Date().getFullYear();
+      }
+
+      const revenues = [];
+      const monthNames = [
+        'Tháng 1',
+        'Tháng 2',
+        'Tháng 3',
+        'Tháng 4',
+        'Tháng 5',
+        'Tháng 6',
+        'Tháng 7',
+        'Tháng 8',
+        'Tháng 9',
+        'Tháng 10',
+        'Tháng 11',
+        'Tháng 12',
+      ];
+
+      for (let month = 0; month < 12; month++) {
+        const start = new Date(year, month, 1);
+        const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+        const where = {
+          pay_status: PayStatus.COMPLETED,
+          created_at: {
+            [Op.gte]: start,
+            [Op.lte]: end,
+          },
+        };
+
+        const orders = await Order.findAll({
+          attributes: ['total_amount'],
+          where,
+        });
+
+        const totalRevenue = orders.reduce(
+          (sum, order) => sum + +order.total_amount,
+          0,
+        );
+
+        revenues.push({
+          month: monthNames[month],
+          revenue: totalRevenue,
+        });
+      }
+
+      return { revenues };
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(
+        error.message,
+        error.status || StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async statistical(req) {
+    try {
+      let { startDate, endDate } = req.query;
+
+      // Set default values to today's date if not provided
+      const today = new Date();
+      if (!startDate) {
+        startDate = today.getTime().toString();
+      }
+      if (!endDate) {
+        endDate = today.getTime().toString();
+      }
+
+      // Convert startDate and endDate to the start and end of the day
+      const startOfDay = new Date(parseInt(startDate, 10));
+      startOfDay.setHours(startOfDay.getHours() - 7);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const endOfDay = new Date(parseInt(endDate, 10));
+      endOfDay.setHours(endOfDay.getHours() - 7);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const where = {
+        created_at: {
+          [Op.gte]: startOfDay,
+          [Op.lte]: endOfDay,
+        },
+        pay_status: PayStatus.COMPLETED,
+      };
+
+      const orders = await Order.findAll({
+        where,
+        include: [
+          {
+            model: OrderItem,
+            as: 'orderItems',
+            include: [
+              {
+                model: Product,
+                as: 'product',
+                attributes: ['id', 'name', 'price'],
+              },
+            ],
+          },
+        ],
+      });
+
+      const productMap = new Map();
+
+      orders.forEach((order) => {
+        order.orderItems.forEach((item) => {
+          if (
+            item &&
+            item.product &&
+            item.quantity != null &&
+            item.product.price != null
+          ) {
+            const productId = item.product.id;
+            if (!productMap.has(productId)) {
+              productMap.set(productId, {
+                id: productId,
+                name: item.product.name,
+                price: item.product.price,
+                totalQuantity: 0,
+                totalPrice: 0,
+              });
+            }
+            const product = productMap.get(productId);
+            product.totalQuantity += +item.quantity;
+            product.totalPrice += +item.quantity * +item.product.price;
+          }
+        });
+      });
+
+      const products = Array.from(productMap.values());
+
+      return { products };
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(
+        error.message,
+        error.status || StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async pay(req) {
+    const { id } = req.params;
+    console.log('id', id);
+
+    const order = await Order.findByPk(id);
+    if (!order) {
+      throw new ApiError('Order not found', StatusCodes.NOT_FOUND);
+    }
+    if (order.pay_status === PayStatus.COMPLETED) {
+      throw new ApiError('Order is already paid', StatusCodes.BAD_REQUEST);
+    }
+    order.pay_status = PayStatus.COMPLETED;
+    order.status = OrderStatus.COMPLETED;
+    try {
+      await order.save();
+      return order;
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(
+        error.message,
+        error.status || StatusCodes.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
+
 export default new OrderService();

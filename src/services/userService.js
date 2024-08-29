@@ -2,6 +2,9 @@ import db from '../models';
 import ApiError from '../helpers/ApiError';
 import { Op } from 'sequelize';
 import { UserRole } from '../common/constants';
+import bcrypt from 'bcrypt';
+import { StatusCodes } from 'http-status-codes';
+import CommonService from './commonService';
 
 const User = db.User;
 const School = db.School;
@@ -74,40 +77,37 @@ class UserService {
     }
   }
 
-//   async updateUser(req) {
-//     try {
-//       const { id } = req.user;
-//       const { oldPassword, newPassword } = req.body;
-//       const user = await User.findOne({ where: { id } });
+  async updateUser(req) {
+    try {
+      const { id } = req.user;
+      const { oldPassword, newPassword } = req.body;
+      const user = await User.findOne({ where: { id } });
 
-//       if (!user) {
-//         throw new ApiError('User not found', StatusCodes.BAD_REQUEST);
-//       }
-//       const { password, ...result } = user.toJSON();
-//       if (oldPassword && newPassword) {
-//         const valid = bcrypt.compareSync(password, oldPassword);
-//         if (!valid) {
-//           throw new ApiError(
-//             'Username or Password is not correct',
-//             StatusCodes.UNPROCESSABLE_ENTITY,
-//           );
-//         }
-//         await User.update(
-//           { newPassword },
-//           {
-//             where: { id },
-//           },
-//         );
-//         return { message: 'User updated successfully' };
-
-//       }
-
-
-
-//     } catch (error) {
-//       console.error('error', error);
-//       throw new ApiError(error.message, error.status);
-//     }
-//   }
-// }
+      if (!user) {
+        throw new ApiError('User not found', StatusCodes.BAD_REQUEST);
+      }
+      const { password, ...result } = user.toJSON();
+      if (oldPassword && newPassword) {
+        const valid = bcrypt.compareSync(oldPassword, password);
+        if (!valid) {
+          throw new ApiError(
+            'oldPassword is not correct',
+            StatusCodes.UNPROCESSABLE_ENTITY,
+          );
+        }
+        const hashedPassword = CommonService.hashPassword(newPassword);        
+        await User.update(
+          { password: hashedPassword },
+          {
+            where: { id },
+          },
+        );
+        return { id };
+      }
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(error.message, error.status);
+    }
+  }
+}
 export default new UserService();
