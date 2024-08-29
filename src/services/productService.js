@@ -52,6 +52,7 @@ class ProductService {
 
       // Build the where clause based on the filters
       const where = {};
+      where.deleted_at = null;
       if (categoryId) {
         where.category_id = categoryId; // Assuming category is referenced by categoryId
       }
@@ -86,7 +87,7 @@ class ProductService {
       throw new ApiError(error.message, error.status);
     }
   }
-  
+
   async deleteProduct(req) {
     const { id } = req.body;
     const product = await Product.findOne({ where: { id, deleted_at: null } });
@@ -102,6 +103,34 @@ class ProductService {
     } catch (error) {
       console.error('Error deleting product:', error);
       throw new ApiError('Failed to delete product', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async updateProduct(req) {
+    const { body, file } = req;
+    const { name, price, productId } = body;
+    const product = await Product.findOne({ where: { id: productId, deleted_at: null } });
+    if (!product) {
+      throw new ApiError('Product not found', StatusCodes.BAD_REQUEST);
+    }
+    try {
+      const productData = {};
+      if (name && name !== product.name) {
+        productData.name = name;
+      }
+      if (price && price !== product.price) {
+        productData.price = price;
+      }
+      if (file) {
+        productData.image_url = file.filename        
+      } if (Object.keys(productData).length === 0) {
+        throw new ApiError('Notihing to update', StatusCodes.BAD_REQUEST);
+      }
+      await Product.update(productData, { where: { id: productId } });
+      return productData;
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw new ApiError('Failed to update product', StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
 }
