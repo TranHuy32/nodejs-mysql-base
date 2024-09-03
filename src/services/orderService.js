@@ -91,15 +91,15 @@ class OrderService {
       }
       if (startDate) {
         const start = new Date(parseInt(startDate, 10));
-        start.setHours(start.getHours() - 7); // Convert to UTC by subtracting 7 hours
         start.setHours(0, 0, 0, 0); // Set to the beginning of the day
+        console.log('start', start);
         where.created_at = { ...where.created_at, [Op.gte]: start }; // Filter by start date if provided
       }
 
       if (endDate) {
         const end = new Date(parseInt(endDate, 10));
-        end.setHours(end.getHours() - 7); // Convert to UTC by subtracting 7 hours
         end.setHours(23, 59, 59, 999); // Set to the end of the day
+        console.log('end', end);
         where.created_at = { ...where.created_at, [Op.lte]: end }; // Filter by end date if provided
       }
       // Restrict orders to the current user if not an admin
@@ -183,14 +183,12 @@ class OrderService {
 
       if (startDate) {
         const start = new Date(parseInt(startDate, 10));
-        start.setHours(start.getHours() - 7); // Convert to UTC by subtracting 7 hours
         start.setHours(0, 0, 0, 0); // Set to the beginning of the day
         where.created_at = { ...where.created_at, [Op.gte]: start };
       }
 
       if (endDate) {
         const end = new Date(parseInt(endDate, 10));
-        end.setHours(end.getHours() - 7); // Convert to UTC by subtracting 7 hours
         end.setHours(23, 59, 59, 999); // Set to the end of the day
         where.created_at = { ...where.created_at, [Op.lte]: end };
       }
@@ -239,7 +237,6 @@ class OrderService {
 
       // Set date to today's date if not provided
       const targetDate = date ? new Date(parseInt(date, 10)) : new Date();
-      targetDate.setHours(targetDate.getHours() - 7);
       targetDate.setHours(0, 0, 0, 0); // Set to the beginning of the day
       const endOfDay = new Date(targetDate);
       endOfDay.setHours(23, 59, 59, 999); // Set to the end of the day
@@ -410,11 +407,9 @@ class OrderService {
 
       // Convert startDate and endDate to the start and end of the day
       const startOfDay = new Date(parseInt(startDate, 10));
-      startOfDay.setHours(startOfDay.getHours() - 7);
       startOfDay.setHours(0, 0, 0, 0);
 
       const endOfDay = new Date(parseInt(endDate, 10));
-      endOfDay.setHours(endOfDay.getHours() - 7);
       endOfDay.setHours(23, 59, 59, 999);
 
       const where = {

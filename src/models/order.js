@@ -65,17 +65,17 @@ export default (sequelize) => {
         defaultValue: 'pending',
       },
       created_at: {
-        type: DataTypes.DATE,
+        type: 'TIMESTAMPTZ',
         allowNull: false,
         defaultValue: DataTypes.NOW,
       },
       updated_at: {
-        type: DataTypes.DATE,
+        type: 'TIMESTAMPTZ',
         allowNull: false,
         defaultValue: DataTypes.NOW,
       },
       deleted_at: {
-        type: DataTypes.DATE,
+        type: 'TIMESTAMPTZ',
         allowNull: true,
       },
     },

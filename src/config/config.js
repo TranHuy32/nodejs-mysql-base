@@ -13,6 +13,7 @@ const config = {
     host: DB_HOST,
     port: DB_PORT,
     dialect: 'mysql',
+    timezone: '+07:00', // Thiết lập múi giờ tại đây
   },
 };
 
