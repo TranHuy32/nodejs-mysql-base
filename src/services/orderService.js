@@ -65,6 +65,7 @@ class OrderService {
     }
   }
   async getAll(req) {
+    console.log('[all order]', req.query);
     try {
       const { role, school_id } = req.user;
       const {
@@ -172,6 +173,7 @@ class OrderService {
   }
 
   async getDebt(req) {
+    console.log('[debt]', req.query);
     try {
       const { role, school_id } = req.user;
       const { startDate, endDate, schoolId } = req.query;
@@ -227,6 +229,7 @@ class OrderService {
   }
 
   async allProductsNeedToBuy(req) {
+    console.log('[all product need to buy]', req.query);
     try {
       const { date, schoolId, status } = req.query;
       const where = {};
