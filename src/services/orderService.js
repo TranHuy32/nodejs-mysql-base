@@ -248,9 +248,24 @@ class OrderService {
         [Op.gte]: targetDate,
         [Op.lte]: endOfDay,
       };
+      let user = null;
 
-      if (schoolId) {
+      if (!!schoolId) {
         where.school_id = schoolId;
+
+        const userSchool = await UserSchool.findOne({
+          where: {
+            school_id: schoolId,
+          },
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'name'],
+            },
+          ],
+        });
+        user = !!userSchool ? userSchool.user : null;
       }
 
       const orders = await Order.findAll({
@@ -272,23 +287,7 @@ class OrderService {
       });
 
       if (orders.length === 0) {
-        return { products: [] };
-      }
-      let user = null;
-      if (!!schoolId) {
-        const userSchool = await UserSchool.findOne({
-          where: {
-            school_id: schoolId,
-          },
-          include: [
-            {
-              model: User,
-              as: 'user',
-              attributes: ['id', 'name'],
-            },
-          ],
-        });
-        user = !!userSchool ? userSchool.user : null;
+        return { products: [], userAssigned: user };
       }
 
       const staffAssignment = await StaffAssignment.findAll({
