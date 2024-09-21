@@ -1,6 +1,6 @@
 import db from '../models';
 import ApiError from '../helpers/ApiError';
-import { Op } from 'sequelize';
+import { Op, where } from 'sequelize';
 import { UserRole } from '../common/constants';
 import bcrypt from 'bcrypt';
 import { StatusCodes } from 'http-status-codes';
@@ -8,6 +8,7 @@ import CommonService from './commonService';
 
 const User = db.User;
 const School = db.School;
+const UserSchool = db.UserSchool;
 
 class UserService {
   async getAll(req) {
@@ -95,7 +96,7 @@ class UserService {
             StatusCodes.UNPROCESSABLE_ENTITY,
           );
         }
-        const hashedPassword = CommonService.hashPassword(newPassword);        
+        const hashedPassword = CommonService.hashPassword(newPassword);
         await User.update(
           { password: hashedPassword },
           {
@@ -104,6 +105,68 @@ class UserService {
         );
         return { id };
       }
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(error.message, error.status);
+    }
+  }
+
+  async delete(req) {
+    try {
+      const { id } = req.params;
+      const user = await User.findOne({ where: { id } });
+
+      if (!user) {
+        throw new ApiError('User not found', StatusCodes.BAD_REQUEST);
+      }
+      if (user.acvite === false) {
+        throw new ApiError('User is not active', StatusCodes.BAD_REQUEST);
+      }
+
+      await User.update(
+        { deleted_at: new Date() },
+        {
+          where: { id },
+        },
+      );
+      return { id };
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(error.message, error.status);
+    }
+  }
+
+  async assign(req) {
+    try {
+      const { userId, schoolId } = req.body;
+      const user = await User.findByPk(userId);
+      if (!user) {
+        throw new ApiError('User not found', StatusCodes.BAD_REQUEST);
+      }
+      if (user.role !== UserRole.STAFF) {
+        throw new ApiError('User is not staff', StatusCodes.BAD_REQUEST);
+      }
+      const school = await School.findByPk(schoolId);
+      if (!school) {
+        throw new ApiError('School not found', StatusCodes.BAD_REQUEST);
+      }
+      const userSchool = await UserSchool.findOne({
+        where: { school_id: schoolId },
+      });
+
+      if (!!userSchool) {
+        await UserSchool.update(
+          { deleted_at: new Date() },
+          {
+            where: { id: userSchool.id },
+          },
+        );
+      }
+      const newUserSchool = await UserSchool.create({
+        user_id: userId,
+        school_id: schoolId,
+      });
+      return newUserSchool;
     } catch (error) {
       console.error('error', error);
       throw new ApiError(error.message, error.status);

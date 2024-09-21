@@ -57,7 +57,7 @@ class AuthService {
       }
 
       const { password: hashedPassword, school, ...payload } = user.toJSON();
-      payload.schoolName = school?.name
+      payload.schoolName = school?.name;
       const valid = bcrypt.compareSync(password, hashedPassword);
       if (!valid) {
         throw new ApiError(

@@ -22,23 +22,31 @@ const setupRoutes = (app) => {
     },
   );
 
-  route.get('', verifyAccessToken([UserRole.ADMIN, UserRole.STAFF, UserRole.USER]), async (req, res, next) => {
-    try {
-      const result = await CategoryService.getAll(req);
-      return successHandler(res, 'success', result);
-    } catch (err) {
-      return next(err);
-    }
-  });
+  route.get(
+    '',
+    verifyAccessToken([UserRole.ADMIN, UserRole.STAFF, UserRole.USER]),
+    async (req, res, next) => {
+      try {
+        const result = await CategoryService.getAll(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 
-  route.patch('', verifyAccessToken([UserRole.ADMIN]), async (req, res, next) => {
-    try {
-      const result = await CategoryService.updateCategory(req);
-      return successHandler(res, 'success', result);
-    } catch (err) {
-      return next(err);
-    }
-  });
+  route.patch(
+    '',
+    verifyAccessToken([UserRole.ADMIN]),
+    async (req, res, next) => {
+      try {
+        const result = await CategoryService.updateCategory(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 };
 
 export default setupRoutes;

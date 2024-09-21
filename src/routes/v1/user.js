@@ -47,6 +47,32 @@ const setupRoutes = (app) => {
       }
     },
   );
+
+  route.delete(
+    '/:id',
+    verifyAccessToken([UserRole.ADMIN]),
+    async (req, res, next) => {
+      try {
+        const result = await UserService.delete(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
+
+  route.post(
+    '/assign',
+    verifyAccessToken([UserRole.ADMIN]),
+    async (req, res, next) => {
+      try {
+        const result = await UserService.assign(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 };
 
 export default setupRoutes;

@@ -1,24 +1,24 @@
 import { Model, DataTypes } from 'sequelize';
 
 export default (sequelize) => {
-  class StaffAssignment extends Model {
+  class UserSchool extends Model {
     static associate(models) {
-      StaffAssignment.belongsTo(models.User, {
-        as: 'user',
-        foreignKey: 'staff_id',
-      }); // Liên kết StaffAssignment với User
-      StaffAssignment.belongsTo(models.Product, { foreignKey: 'product_id' }); // Liên kết StaffAssignment với Product
+      UserSchool.belongsTo(models.School, {
+        as: 'school',
+        foreignKey: 'school_id',
+      });
+      UserSchool.belongsTo(models.User, { as: 'user', foreignKey: 'user_id' });
     }
   }
 
-  StaffAssignment.init(
+  UserSchool.init(
     {
       id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      staff_id: {
+      user_id: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
@@ -26,18 +26,13 @@ export default (sequelize) => {
           key: 'id',
         },
       },
-      product_id: {
+      school_id: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: 'Products',
+          model: 'Schools',
           key: 'id',
         },
-      },
-      assign_date: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW,
       },
       created_at: {
         type: DataTypes.DATE,
@@ -56,16 +51,16 @@ export default (sequelize) => {
     },
     {
       sequelize,
-      modelName: 'StaffAssignment',
+      modelName: 'UserSchool',
       timestamps: true,
       paranoid: true,
       underscored: true,
       createdAt: 'created_at',
       updatedAt: 'updated_at',
       deletedAt: 'deleted_at',
-      tableName: 'StaffAssignments',
+      tableName: 'UserSchools',
     },
   );
 
-  return StaffAssignment;
+  return UserSchool;
 };

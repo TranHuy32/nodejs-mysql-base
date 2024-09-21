@@ -6,7 +6,8 @@ import { UserRole } from '../common/constants';
 import { Op } from 'sequelize';
 import teleBotService from './teleBotService';
 
-const { Order, OrderItem, Product, User, School, StaffAssignment } = db;
+const { Order, OrderItem, Product, User, School, StaffAssignment, UserSchool } =
+  db;
 
 class OrderService {
   async create(req) {
@@ -273,6 +274,22 @@ class OrderService {
       if (orders.length === 0) {
         return { products: [] };
       }
+      let user = null;
+      if (!!schoolId) {
+        const userSchool = await UserSchool.findOne({
+          where: {
+            school_id: schoolId,
+          },
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'name'],
+            },
+          ],
+        });
+        user = !!userSchool ? userSchool.user : null;
+      }
 
       const staffAssignment = await StaffAssignment.findAll({
         attributes: ['id', 'product_id', 'staff_id', 'assign_date'], // Changed 'select' to 'attributes'
@@ -323,7 +340,7 @@ class OrderService {
         });
       });
 
-      return { products: Object.values(productStats) };
+      return { products: Object.values(productStats), userAssigned: user };
     } catch (error) {
       console.error('error', error);
       throw new ApiError(

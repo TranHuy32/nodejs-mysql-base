@@ -18,7 +18,7 @@ const setupRoutes = (app) => {
       try {
         if (req.files && req.files.length > 0) {
           req.file = req.files[0]; // Pick the first file
-        } 
+        }
         console.log('req.file', req.file);
         console.log('req.body', req.body);
         const result = await ProductService.create(req);
@@ -63,7 +63,7 @@ const setupRoutes = (app) => {
       try {
         if (req.files && req.files.length > 0) {
           req.file = req.files[0]; // Pick the first file
-        } 
+        }
         console.log('req.file', req.file);
         console.log('req.body', req.body);
         const result = await ProductService.updateProduct(req);
