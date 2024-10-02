@@ -10,7 +10,7 @@ class SchoolService {
     try {
       const { name, address, contact_number } = req.body;
       const school = await School.findOne({
-        where: { name, deleted_at: null },
+        where: { name, deleted_at: null, is_deleted: false },
       });
 
       if (!!school) {
