@@ -249,9 +249,9 @@ class OrderService {
         [Op.lte]: endOfDay,
       };
       let user = null;
-
       if (!!schoolId) {
         where.school_id = schoolId;
+        console.log(1111111111, userSchool);
 
         const userSchool = await UserSchool.findOne({
           where: {
@@ -265,6 +265,8 @@ class OrderService {
             },
           ],
         });
+        console.log(1111111111, userSchool);
+
         user = !!userSchool ? userSchool.user : null;
       }
 
@@ -326,6 +328,9 @@ class OrderService {
       orders.forEach((order) => {
         order.orderItems.forEach((orderItem) => {
           const product = orderItem.product;
+          if (!product) {
+            return
+          }
           if (!productStats[product.id]) {
             productStats[product.id] = {
               id: product.id,
