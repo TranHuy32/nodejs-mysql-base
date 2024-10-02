@@ -34,6 +34,19 @@ const setupRoutes = (app) => {
       }
     },
   );
+
+  route.delete(
+    '/:id',
+    verifyAccessToken([UserRole.ADMIN]),
+    async (req, res, next) => {
+      try {
+        const result = await SchoolService.delete(req);
+        return successHandler(res, 'success', result);
+      } catch (err) {
+        return next(err);
+      }
+    },
+  );
 };
 
 export default setupRoutes;

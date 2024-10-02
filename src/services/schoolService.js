@@ -3,6 +3,7 @@ import ApiError from '../helpers/ApiError';
 import { StatusCodes } from 'http-status-codes';
 
 const School = db.School;
+const User = db.User;
 
 class SchoolService {
   async create(req) {
@@ -35,6 +36,7 @@ class SchoolService {
       const currentPage = parseInt(page, 10);
       const offset = (currentPage - 1) * limit;
       const { count, rows: schools } = await School.findAndCountAll({
+        where: { is_deleted: false, deleted_at: null },
         limit: limit,
         offset: offset,
       });
@@ -50,6 +52,36 @@ class SchoolService {
           pageSize: limit,
         },
       };
+    } catch (error) {
+      console.error('error', error);
+      throw new ApiError(error.message, error.status);
+    }
+  }
+
+  async delete(req) {
+    try {
+      const { id } = req.params;
+      const school = await School.findOne({ where: { id, is_deleted: false, deleted_at: null } });
+      if (!!school) {
+        await Promise.all([
+          school.update(
+            { is_deleted: true },
+            {
+              where: { id },
+            }
+          ),
+          User.update(
+            { deleted_at: new Date() },
+            {
+              where: { school_id: id },
+            }
+          )
+        ]);
+      }
+      if (!school) {
+        throw new ApiError('School not found', StatusCodes.BAD_REQUEST);
+      }
+      return school;
     } catch (error) {
       console.error('error', error);
       throw new ApiError(error.message, error.status);

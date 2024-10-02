@@ -37,6 +37,11 @@ export default (sequelize) => {
           is: /^[0-9\-\+]{9,15}$/, // Regular expression for contact number validation
         },
       },
+      is_deleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,
