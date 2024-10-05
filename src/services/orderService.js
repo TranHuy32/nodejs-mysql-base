@@ -53,7 +53,7 @@ class OrderService {
 
       // Commit the transaction
       await transaction.commit();
-      teleBotService.sendMessage(order.toJSON());
+      await teleBotService.sendMessage(order.toJSON());
       return order;
     } catch (error) {
       // Rollback the transaction in case of an error
