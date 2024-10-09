@@ -24,4 +24,6 @@ export const UnitEnum = {
   GOI: 'gói',
   CHAI: 'chai',
   HOP: 'hộp',
+  KHAY: 'khay',
+  QUA: 'quả',
 };
