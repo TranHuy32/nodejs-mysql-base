@@ -400,9 +400,12 @@ class OrderService {
           0,
         );
 
+        // Round the total revenue to the nearest integer
+        const roundedTotalRevenue = Math.round(totalRevenue);
+
         revenues.push({
           month: monthNames[month],
-          revenue: totalRevenue,
+          revenue: roundedTotalRevenue,
         });
       }
 
