@@ -1,6 +1,8 @@
 import ApiError from '../helpers/ApiError';
 import axios from 'axios';
 import db from '../models';
+import fs from 'fs';
+import FormData from 'form-data';
 
 const Order = db.Order;
 const OrderItem = db.OrderItem;
@@ -59,11 +61,11 @@ Tổng: ${+orderJson.total_amount} VND
 
 SẢN PHẨM:
 ${orderJson.orderItems
-  .map(
-    (item) => `- ${item.product.name} (${item.quantity} ${item.product.unit})
+          .map(
+            (item) => `- ${item.product.name} (${item.quantity} ${item.product.unit})
 ................................`,
-  )
-  .join('\n')}`;
+          )
+          .join('\n')}`;
 
       const response = await axios.post(
         `https://api.telegram.org/bot${TELE_BOT_TOKEN}/sendMessage`,
@@ -77,6 +79,30 @@ ${orderJson.orderItems
       console.error('error', error);
       throw new ApiError(error.message, error.status);
     }
+  }
+
+
+  async sendFile(filePath) {
+    const { TELE_BOT_TOKEN, TELE_REVENUE_CHAT_ID } = process.env;
+
+    // Read the file from the provided filePath
+    const fileStream = fs.createReadStream(filePath);
+
+    // Create a FormData instance
+    const form = new FormData();
+    form.append('chat_id', TELE_REVENUE_CHAT_ID);
+    form.append('document', fileStream);
+
+    // Send the file using axios
+    await axios.post(
+      `https://api.telegram.org/bot${TELE_BOT_TOKEN}/sendDocument`,
+      form,
+      {
+        headers: {
+          ...form.getHeaders(),
+        },
+      }
+    );
   }
 }
 
