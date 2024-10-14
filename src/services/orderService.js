@@ -3,8 +3,21 @@ import ApiError from '../helpers/ApiError';
 import { StatusCodes } from 'http-status-codes';
 import { OrderStatus, PayStatus } from '../models/order';
 import { UserRole } from '../common/constants';
-import { Op } from 'sequelize';
+import { Op, or } from 'sequelize';
 import teleBotService from './teleBotService';
+const {
+  Document,
+  Packer,
+  Paragraph,
+  Table,
+  TableRow,
+  TableCell,
+  TextRun,
+} = require('docx');
+const fs = require('fs');
+const path = require('path');
+const mammoth = require('mammoth');
+const libre = require('libreoffice-convert');
 
 const { Order, OrderItem, Product, User, School, StaffAssignment, UserSchool } =
   db;
@@ -329,7 +342,7 @@ class OrderService {
         order.orderItems.forEach((orderItem) => {
           const product = orderItem.product;
           if (!product) {
-            return
+            return;
           }
           if (!productStats[product.id]) {
             productStats[product.id] = {
@@ -504,17 +517,32 @@ class OrderService {
     const { id } = req.params;
     console.log('id', id);
 
-    const order = await Order.findByPk(id);
+    const order = await Order.findByPk(id, {
+      include: [
+        {
+          model: OrderItem,
+          as: 'orderItems',
+          include: [{ model: Product, as: 'product' }],
+        },
+        {
+          model: User,
+          as: 'user',
+          include: [{ model: School, as: 'school' }],
+        },
+      ],
+    });
     if (!order) {
       throw new ApiError('Order not found', StatusCodes.NOT_FOUND);
     }
-    if (order.pay_status === PayStatus.COMPLETED) {
-      throw new ApiError('Order is already paid', StatusCodes.BAD_REQUEST);
-    }
+    // if (order.pay_status === PayStatus.COMPLETED) {
+    //   throw new ApiError('Order is already paid', StatusCodes.BAD_REQUEST);
+    // }
     order.pay_status = PayStatus.COMPLETED;
     order.status = OrderStatus.COMPLETED;
     try {
       await order.save();
+      const filePath = await createWordDocument(order);
+      await teleBotService.sendFile(filePath);
       return order;
     } catch (error) {
       console.error('error', error);
@@ -523,7 +551,451 @@ class OrderService {
         error.status || StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
+
+    async function createWordDocument(order) {
+      try {
+        // Initialize the Document with A4 page size in portrait orientation
+        const doc = new Document({
+          sections: [
+            {
+              properties: {
+                page: {
+                  size: {
+                    width: 11906, // A4 width in TWIPs for portrait
+                    height: 16838, // A4 height in TWIPs for portrait
+                  },
+                },
+              },
+              children: [
+                // Title/Header
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: 'CỬA HÀNG HOÀNG THỊ QUỲNH',
+                      size: 26,
+                    }),
+                  ],
+                  alignment: 'center',
+                }),
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: 'Địa chỉ: chợ Bảo Nhai, xã Bảo Nhai, huyện Bắc Hà, tỉnh Lào Cai',
+                      size: 24,
+                    }),
+                  ],
+                  alignment: 'center',
+                }),
+                new Paragraph('\n'),
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: 'PHIẾU GIAO HÀNG',
+                      bold: true,
+                      size: 34,
+                    }),
+                  ],
+                  alignment: 'center',
+                }),
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `(Lập lúc: ${new Date().toLocaleString()})`,
+                      size: 22,
+                    }),
+                  ],
+                  alignment: 'center',
+                }),
+                new Paragraph('\n'),
+
+                // Customer and Order Information
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `Khách hàng: ${order?.user?.name ? order.user.name : ''}`,
+                      size: 24,
+                    }),
+                  ],
+                  alignment: 'left',
+                }),
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `Trường: ${order?.user?.school?.name ? order.user.school.name : ''}`,
+                      size: 24,
+                    }),
+                  ],
+                  alignment: 'left',
+                }),
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `Mã đơn hàng: ${order.id}`,
+                      size: 24,
+                    }),
+                  ],
+                  alignment: 'left',
+                }),
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `Ngày giao: ${new Date().toLocaleDateString()}`,
+                      size: 24,
+                    }),
+                  ],
+                  alignment: 'left',
+                }),
+                new Paragraph('\n'),
+
+                // Table headers with fixed column widths
+                new Table({
+                  alignment: 'center', // Center align the table
+                  rows: [
+                    // Header Row with explicit column widths
+                    new TableRow({
+                      height: { value: 500, rule: 'exact' }, // Set the row height
+                      children: [
+                        new TableCell({
+                          width: { size: 700, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [
+                                new TextRun({ text: 'Stt', size: 24 }),
+                              ],
+                              alignment: 'center',
+                            }),
+                          ],
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                        new TableCell({
+                          width: { size: 3000, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [
+                                new TextRun({ text: 'Sản phẩm', size: 24 }),
+                              ],
+                              alignment: 'center',
+                            }),
+                          ],
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                        new TableCell({
+                          width: { size: 700, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [
+                                new TextRun({ text: 'Dvt', size: 24 }),
+                              ],
+                              alignment: 'center',
+                            }),
+                          ],
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                        new TableCell({
+                          width: { size: 700, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [new TextRun({ text: 'Sl', size: 24 })],
+                              alignment: 'center',
+                            }),
+                          ],
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                        new TableCell({
+                          width: { size: 1200, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [
+                                new TextRun({ text: 'Đơn giá', size: 24 }),
+                              ],
+                              alignment: 'center',
+                            }),
+                          ],
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                        new TableCell({
+                          width: { size: 1200, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [
+                                new TextRun({ text: 'Thành tiền', size: 24 }),
+                              ],
+                              alignment: 'center',
+                            }),
+                          ],
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                        new TableCell({
+                          width: { size: 1200, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [
+                                new TextRun({ text: 'Xác nhận', size: 24 }),
+                              ],
+                              alignment: 'center',
+                            }),
+                          ],
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                      ],
+                    }),
+                    // 7 Default Rows
+                    ...Array.from({ length: 7 }).map((_, index) => {
+                      const item = order.orderItems[index];
+                      return new TableRow({
+                        height: { value: 400, rule: 'exact' }, // Set the row height
+                        children: [
+                          new TableCell({
+                            width: { size: 700, type: 'DXA' },
+                            children: [
+                              new Paragraph({
+                                children: [
+                                  new TextRun({
+                                    text: (index + 1).toString(),
+                                    size: 24,
+                                  }),
+                                ],
+                                alignment: 'center',
+                              }),
+                            ],
+                            verticalAlign: 'center', // Center align text vertically
+                          }),
+                          new TableCell({
+                            width: { size: 3000, type: 'DXA' },
+                            children: [
+                              new Paragraph({
+                                children: [
+                                  new TextRun({
+                                    text: item ? item.product.name : '',
+                                    size: 24,
+                                  }),
+                                ],
+                                alignment: 'center',
+                              }),
+                            ],
+                            verticalAlign: 'center', // Center align text vertically
+                          }),
+                          new TableCell({
+                            width: { size: 700, type: 'DXA' },
+                            children: [
+                              new Paragraph({
+                                children: [
+                                  new TextRun({
+                                    text: item ? 'kg' : '',
+                                    size: 24,
+                                  }),
+                                ],
+                                alignment: 'center',
+                              }),
+                            ],
+                            verticalAlign: 'center', // Center align text vertically
+                          }),
+                          new TableCell({
+                            width: { size: 700, type: 'DXA' },
+                            children: [
+                              new Paragraph({
+                                children: [
+                                  new TextRun({
+                                    text: item ? item.quantity.toString() : '',
+                                    size: 24,
+                                  }),
+                                ],
+                                alignment: 'center',
+                              }),
+                            ],
+                            verticalAlign: 'center', // Center align text vertically
+                          }),
+                          new TableCell({
+                            width: { size: 1200, type: 'DXA' },
+                            children: [
+                              new Paragraph({
+                                children: [
+                                  new TextRun({
+                                    text: item
+                                      ? item.price.toString()
+                                      : '',
+                                    size: 24,
+                                  }),
+                                ],
+                                alignment: 'center',
+                              }),
+                            ],
+                            verticalAlign: 'center', // Center align text vertically
+                          }),
+                          new TableCell({
+                            width: { size: 1200, type: 'DXA' },
+                            children: [
+                              new Paragraph({
+                                children: [
+                                  new TextRun({
+                                    text: item
+                                      ? (
+                                          item.quantity * item.price
+                                        ).toString()
+                                      : '',
+                                    size: 24,
+                                  }),
+                                ],
+                                alignment: 'center',
+                              }),
+                            ],
+                            verticalAlign: 'center', // Center align text vertically
+                          }),
+                          new TableCell({
+                            width: { size: 1200, type: 'DXA' },
+                            children: [
+                              new Paragraph({
+                                children: [new TextRun({ text: '', size: 24 })],
+                                alignment: 'center',
+                              }),
+                            ],
+                            verticalAlign: 'center', // Center align text vertically
+                          }),
+                        ],
+                      });
+                    }),
+
+                    // Total Row
+                    new TableRow({
+                      height: { value: 400, rule: 'exact' }, // Set the row height
+                      children: [
+                        new TableCell({
+                          width: { size: 700, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [
+                                new TextRun({ text: 'Tổng:', size: 24 }),
+                              ],
+                              alignment: 'center',
+                            }),
+                          ],
+                          columnSpan: 5,
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                        new TableCell({
+                          width: { size: 1200, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [
+                                new TextRun({
+                                  text:
+                                    order.orderItems
+                                      .reduce(
+                                        (sum, item) =>
+                                          sum + item.quantity * item.price,
+                                        0,
+                                      )
+                                      .toString(),
+                                  size: 24,
+                                }),
+                              ],
+                              alignment: 'center',
+                            }),
+                          ],
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                        new TableCell({
+                          width: { size: 1200, type: 'DXA' },
+                          children: [
+                            new Paragraph({
+                              children: [new TextRun({ text: '', size: 24 })],
+                              alignment: 'center',
+                            }),
+                          ],
+                          verticalAlign: 'center', // Center align text vertically
+                        }),
+                      ],
+                    }),
+                  ],
+                }),
+
+                // Date and Signature Section
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `.................., ngày ..... tháng ..... năm ${new Date().getFullYear()}`,
+                      italics: true,
+                      size: 24,
+                    }),
+                  ],
+                  alignment: 'right',
+                  spacing: { before: 400, after: 400 },
+                }),
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: 'Bên nhận hàng   ', size: 24 }),
+                    new TextRun({ text: ' '.repeat(40), size: 24 }),
+                    new TextRun({ text: '   Bên giao hàng', size: 24 }),
+                  ],
+                  alignment: 'center',
+                }),
+                new Paragraph({
+                  children: [
+                    new TextRun({ text: '(Ký, ghi rõ họ tên)', size: 24 }),
+                    new TextRun({ text: ' '.repeat(40), size: 24 }),
+                    new TextRun({ text: '(Ký, ghi rõ họ tên)', size: 24 }),
+                  ],
+                  alignment: 'center',
+                }),
+              ],
+            },
+          ],
+        });
+
+        // Generate a random file name
+        const randomString = Math.random().toString(36).substring(2, 10);
+        const schoolName = order?.user?.school?.name;
+        const pdfName = schoolName.replaceAll(' ', '_') || randomString;
+        const now = new Date();
+
+        const day = now.getDate();
+        const month = now.getMonth() + 1; // Months are zero-based, so add 1
+        const year = now.getFullYear();
+        const pdfDate = `${day}${month}${year}`;
+        console.log(`Ngày: ${day}, Tháng: ${month}, Năm: ${year}`);
+        const wordFilePath = path.join(
+          __dirname,
+          'orders',
+          `Hóa_đơn_${pdfName}_${pdfDate}.docx`,
+        );
+
+        // Save the document to a file
+        const buffer = await Packer.toBuffer(doc);
+        fs.writeFileSync(wordFilePath, buffer);
+
+        // Convert the Word document to PDF
+        // const pdfFilePath = wordFilePath.replace('.docx', '.pdf');
+        // await convertDocxToPdf(wordFilePath, pdfFilePath);
+        return wordFilePath;
+      } catch (error) {
+        console.error('Document creation error:', error);
+        throw new ApiError(
+          'Error creating Word document',
+          StatusCodes.INTERNAL_SERVER_ERROR,
+        );
+      }
+    }
+
+    async function convertDocxToPdf(wordFilePath, pdfFilePath) {
+      // Đọc tệp .docx
+      const file = fs.readFileSync(wordFilePath);
+      console.log(1111111111, file);
+
+      // Định dạng đích là PDF
+      const outputFormat = '.pdf';
+
+      // Thực hiện chuyển đổi
+      await libre.convert(file, outputFormat, undefined, (err, done) => {
+        if (err) {
+          console.error(`Error converting file: ${err}`);
+          return;
+        }
+
+        // Ghi file PDF đã chuyển đổi
+        fs.writeFileSync(pdfFilePath, done);
+        console.log('Conversion successful! PDF saved at:', pdfFilePath);
+      });
+    }
   }
 }
-
 export default new OrderService();
