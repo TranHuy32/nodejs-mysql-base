@@ -537,9 +537,9 @@ class OrderService {
     if (!order) {
       throw new ApiError('Order not found', StatusCodes.NOT_FOUND);
     }
-    // if (order.pay_status === PayStatus.COMPLETED) {
-    //   throw new ApiError('Order is already paid', StatusCodes.BAD_REQUEST);
-    // }
+    if (order.pay_status === PayStatus.COMPLETED) {
+      throw new ApiError('Order is already paid', StatusCodes.BAD_REQUEST);
+    }
     order.pay_status = PayStatus.COMPLETED;
     order.status = OrderStatus.COMPLETED;
     try {
