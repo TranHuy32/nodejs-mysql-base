@@ -3,6 +3,7 @@ import axios from 'axios';
 import db from '../models';
 import fs from 'fs';
 import FormData from 'form-data';
+import https from 'https';
 
 const Order = db.Order;
 const OrderItem = db.OrderItem;
@@ -87,17 +88,17 @@ ${orderJson.orderItems
 
 
   async sendFile(filePath) {
-    const { TELE_BOT_TOKEN, TELE_REVENUE_CHAT_ID } = process.env;
+    const { TELE_BOT_TOKEN, TELE_CHAT_ID } = process.env;
 
     // Read the file from the provided filePath
     const fileStream = fs.createReadStream(filePath);
-
     // Create a FormData instance
     const form = new FormData();
-    form.append('chat_id', TELE_REVENUE_CHAT_ID);
+    form.append('chat_id', TELE_CHAT_ID );
     form.append('document', fileStream);
 
-    // Send the file using axios
+    const agent = new https.Agent({ family: 4 });
+
     await axios.post(
       `https://api.telegram.org/bot${TELE_BOT_TOKEN}/sendDocument`,
       form,
@@ -105,6 +106,7 @@ ${orderJson.orderItems
         headers: {
           ...form.getHeaders(),
         },
+        httpsAgent: agent, // dùng IPv4
       }
     );
   }
