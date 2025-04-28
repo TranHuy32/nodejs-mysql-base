@@ -73,10 +73,14 @@ ${orderJson.orderItems
           chat_id: TELE_CHAT_ID,
           text: formattedOrder,
         },
+        {
+          family: 4, // <-- thêm dòng này
+        }
       );
+
       return response.data;
     } catch (error) {
-      console.error('error', error);
+      console.error('error', error.response.data);
       throw new ApiError(error.message, error.status);
     }
   }
