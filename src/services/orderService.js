@@ -544,8 +544,7 @@ class OrderService {
     order.status = OrderStatus.COMPLETED;
     try {
       await order.save();
-      const filePath = await createWordDocument(order);
-      await teleBotService.sendFile(filePath);
+      saveOrder(order);
       return order;
     } catch (error) {
       console.error('error', error);
@@ -553,6 +552,16 @@ class OrderService {
         error.message,
         error.status || StatusCodes.INTERNAL_SERVER_ERROR,
       );
+    }
+
+    async function saveOrder(order) {
+      try {
+        const filePath = await createWordDocument(order);
+        teleBotService.saveOnDrive(filePath);
+        await teleBotService.sendFile(filePath);
+      } catch (error) {
+        console.error('Error saving order:', error);
+      }
     }
 
     async function createWordDocument(order) {
@@ -833,8 +842,8 @@ class OrderService {
                                   new TextRun({
                                     text: item
                                       ? (
-                                          item.quantity * item.price
-                                        ).toString()
+                                        item.quantity * item.price
+                                      ).toString()
                                       : '',
                                     size: 24,
                                   }),
@@ -863,7 +872,7 @@ class OrderService {
                       height: { value: 400, rule: 'exact' }, // Set the row height
                       children: [
                         new TableCell({
-                          width: { size: 700, type: 'DXA' },
+                          // width: { size: 700, type: 'DXA' },
                           children: [
                             new Paragraph({
                               children: [
@@ -876,7 +885,7 @@ class OrderService {
                           verticalAlign: 'center', // Center align text vertically
                         }),
                         new TableCell({
-                          width: { size: 1200, type: 'DXA' },
+                          // width: { size: 1200, type: 'DXA' },
                           children: [
                             new Paragraph({
                               children: [
@@ -898,7 +907,7 @@ class OrderService {
                           verticalAlign: 'center', // Center align text vertically
                         }),
                         new TableCell({
-                          width: { size: 1200, type: 'DXA' },
+                          // width: { size: 1200, type: 'DXA' },
                           children: [
                             new Paragraph({
                               children: [new TextRun({ text: '', size: 24 })],
@@ -961,15 +970,26 @@ class OrderService {
           'orders',
           `Hóa_đơn_${pdfName}_${pdfDate}.docx`,
         );
+        const pdfFilePath = path.join(
+          __dirname,
+          'orders',
+          `Hóa_đơn_${pdfName}_${pdfDate}.pdf`,
+        );
 
         // Save the document to a file
         const buffer = await Packer.toBuffer(doc);
         fs.writeFileSync(wordFilePath, buffer);
-
+        var convertapi = require('convertapi')('secret_c2HPUr43qnViLvRq');
+        await convertapi.convert('pdf', {
+          File: wordFilePath
+        }, 'doc').then(function (result) {
+          console.log(22222222, result);
+          result.saveFiles(pdfFilePath);
+        });
         // Convert the Word document to PDF
         // const pdfFilePath = wordFilePath.replace('.docx', '.pdf');
         // await convertDocxToPdf(wordFilePath, pdfFilePath);
-        return wordFilePath;
+        return pdfFilePath;
       } catch (error) {
         console.error('Document creation error:', error);
         throw new ApiError(
