@@ -980,12 +980,16 @@ class OrderService {
         const buffer = await Packer.toBuffer(doc);
         fs.writeFileSync(wordFilePath, buffer);
         var convertapi = require('convertapi')('secret_c2HPUr43qnViLvRq');
-        await convertapi.convert('pdf', {
-          File: wordFilePath
-        }, 'doc').then(function (result) {
-          console.log(22222222, result);
-          result.saveFiles(pdfFilePath);
-        });
+        try {
+          await convertapi.convert('pdf', {
+            File: wordFilePath
+          }, 'doc').then(function (result) {
+            console.log(22222222, result);
+            result.saveFiles(pdfFilePath);
+          });
+        } catch (error) {
+          console.log('convert error', error);
+        }
         // Convert the Word document to PDF
         // const pdfFilePath = wordFilePath.replace('.docx', '.pdf');
         // await convertDocxToPdf(wordFilePath, pdfFilePath);
