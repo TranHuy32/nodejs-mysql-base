@@ -132,3 +132,7 @@ dist
 .pnp.*
 
 mysql/
+
+credentials.json
+token.json
+*.pdf
