@@ -981,12 +981,15 @@ class OrderService {
         fs.writeFileSync(wordFilePath, buffer);
         var convertapi = require('convertapi')('secret_c2HPUr43qnViLvRq');
         try {
-          await convertapi.convert('pdf', {
-            File: wordFilePath
-          }, 'doc').then(function (result) {
-            console.log(22222222, result);
-            result.saveFiles(pdfFilePath);
-          });
+          const result = await convertapi.convert('pdf', {
+            File: wordFilePath,
+          }, 'doc');
+
+          console.log('✅ ConvertAPI result:', result.response.Files);
+
+          // Lưu vào thư mục chứa file
+          await result.saveFiles(path.dirname(pdfFilePath));
+
         } catch (error) {
           console.log('convert error', error);
         }
