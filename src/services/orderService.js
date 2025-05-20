@@ -583,7 +583,7 @@ class OrderService {
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: 'CỬA HÀNG HOÀNG THỊ QUỲNH',
+                      text: 'CỬA HÀNG TỔNG HỢP LÀO CAI',
                       size: 26,
                     }),
                   ],
@@ -592,7 +592,7 @@ class OrderService {
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: 'Địa chỉ: chợ Bảo Nhai, xã Bảo Nhai, huyện Bắc Hà, tỉnh Lào Cai',
+                      text: 'Địa chỉ: phường Cam, đường tỉnh Lào Cai',
                       size: 24,
                     }),
                   ],
@@ -612,7 +612,7 @@ class OrderService {
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: `(Lập lúc: ${new Date().toLocaleString()})`,
+                      text: `(Lập lúc: ${new Date().toLocaleString('vi-VN')})`,
                       size: 22,
                     }),
                   ],
@@ -651,7 +651,7 @@ class OrderService {
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: `Ngày giao: ${new Date().toLocaleDateString()}`,
+                      text: `Ngày giao: ${new Date().toLocaleDateString('vi-VN')}`,
                       size: 24,
                     }),
                   ],
