@@ -592,7 +592,7 @@ class OrderService {
                 new Paragraph({
                   children: [
                     new TextRun({
-                      text: 'Địa chỉ: phường Cam, đường tỉnh Lào Cai',
+                      text: 'Địa chỉ: phường Cam Đường, tỉnh Lào Cai',
                       size: 24,
                     }),
                   ],
