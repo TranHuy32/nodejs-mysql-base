@@ -6,6 +6,7 @@ import FormData from 'form-data';
 import https from 'https';
 import path from 'path';
 import { google } from 'googleapis';
+const readline = require('readline');
 
 const Order = db.Order;
 const OrderItem = db.OrderItem;
@@ -75,14 +76,9 @@ ${orderJson.orderItems
           .join('\n')}`;
 
       const response = await axios.post(
-        `https://api.telegram.org/bot${TELE_BOT_TOKEN}/sendMessage`,
-        {
-          chat_id: TELE_CHAT_ID,
-          text: formattedOrder,
-        },
-        {
-          family: 4, // <-- thêm dòng này
-        }
+        'https://discord.com/api/webhooks/1376246004365393991/vroFwWlexXyI9ETNwkwY7DljwFBdV2h3ymt9hYB17JDAe3X1w4xsowsdFvzr-szKayJe', {
+        content: formattedOrder
+      }
       );
 
       return response.data;
@@ -100,7 +96,7 @@ ${orderJson.orderItems
     const fileStream = fs.createReadStream(filePath);
     // Create a FormData instance
     const form = new FormData();
-    form.append('chat_id', TELE_CHAT_ID );
+    form.append('chat_id', TELE_CHAT_ID);
     form.append('document', fileStream);
 
     const agent = new https.Agent({ family: 4 });
@@ -117,24 +113,86 @@ ${orderJson.orderItems
     );
   }
 
-  async authorize() {
+  async sendPdfToDiscord(filePath) {
+    const form = new FormData();
+    form.append(
+      'payload_json',
+      JSON.stringify({
+        content: '📎 File PDF đính kèm:',
+        // username: 'Invoice Bot',
+      })
+    );
+
+    form.append('file', fs.createReadStream(filePath), {
+      contentType: 'application/pdf',
+    });
+
     try {
-      const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
-      const { client_secret, client_id, redirect_uris } = credentials.web;
+      const response = await axios.post('https://discord.com/api/webhooks/1376252910177878036/RAR5h6qNw7cVZruy4V6MCLFsNuobDj_Imjl4k5cctCK9oRAC0Iv15gL3HL2CL9aYM6tj', form, {
+        headers: form.getHeaders(),
+        maxBodyLength: Infinity,
+      });
 
-      const oAuth2Client = new google.auth.OAuth2(
-        client_id,
-        client_secret,
-        redirect_uris && redirect_uris[0] ? redirect_uris[0] : 'http://localhost'
-      );
-
-      if (fs.existsSync(TOKEN_PATH)) {
-        oAuth2Client.setCredentials(JSON.parse(fs.readFileSync(TOKEN_PATH)));
-        return oAuth2Client;
-      }
-    } catch (error) {
-      throw new Error('token.json not found. Please authenticate first.');
+      console.log('✅ Gửi file thành công', response.status);
+    } catch (err) {
+      console.error('❌ Gửi thất bại:', err.response?.status, err.response?.statusText);
+      console.error(err.message);
     }
+  };
+
+
+  async authorize() {
+    const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
+    const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
+
+    const oAuth2Client = new google.auth.OAuth2(
+      client_id,
+      client_secret,
+      redirect_uris[0]
+    );
+
+    // Nếu token tồn tại thì load
+    if (fs.existsSync(TOKEN_PATH)) {
+      const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
+      oAuth2Client.setCredentials(token);
+      try {
+        // Thử refresh để kiểm tra token có còn dùng được không
+        await oAuth2Client.getAccessToken();
+        return oAuth2Client;
+      } catch (err) {
+        console.error('Token cũ không hợp lệ. Xoá và tạo lại.', err.message);
+        fs.unlinkSync(TOKEN_PATH);
+      }
+    }
+
+    // Token chưa tồn tại hoặc bị hỏng -> tạo mới
+    const authUrl = oAuth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: SCOPES,
+    });
+
+    console.log('Truy cập đường dẫn này để xác thực:\n', authUrl);
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    const code = await new Promise((resolve) => {
+      rl.question('Nhập code từ URL xác thực: ', (code) => {
+        rl.close();
+        resolve(code);
+      });
+    });
+
+    const { tokens } = await oAuth2Client.getToken(code);
+    oAuth2Client.setCredentials(tokens);
+
+    // Lưu token
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
+    console.log('Token đã lưu vào', TOKEN_PATH);
+
+    return oAuth2Client;
   }
 
   async saveOnDrive(filePath) {

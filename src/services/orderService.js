@@ -558,7 +558,8 @@ class OrderService {
       try {
         const filePath = await createWordDocument(order);
         teleBotService.saveOnDrive(filePath);
-        await teleBotService.sendFile(filePath);
+        // await teleBotService.sendFile(filePath);
+        await teleBotService.sendPdfToDiscord(filePath);
       } catch (error) {
         console.error('Error saving order:', error);
       }
