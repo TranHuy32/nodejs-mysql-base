@@ -195,9 +195,66 @@ ${orderJson.orderItems
     return oAuth2Client;
   }
 
+  async authorize2() {
+    const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
+    const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
+
+    const oAuth2Client = new google.auth.OAuth2(
+      client_id,
+      client_secret,
+      redirect_uris[0]
+    );
+
+    // Nếu đã có token
+    if (fs.existsSync(TOKEN_PATH)) {
+      const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
+      oAuth2Client.setCredentials(token);
+
+      // Google client sẽ tự động refresh access_token nếu có refresh_token
+      try {
+        await oAuth2Client.getAccessToken(); // Kiểm tra xem có hợp lệ không
+        return oAuth2Client;
+      } catch (err) {
+        console.error('Token không dùng được:', err.message);
+      }
+    }
+
+    // Nếu không có token thì dừng chương trình và yêu cầu xác thực thủ công
+    const authUrl = oAuth2Client.generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'consent',
+      scope: SCOPES,
+    });
+
+    console.log('\n⚠️  Không tìm thấy token hoặc token hết hạn.\n');
+    console.log('👉 Truy cập đường dẫn sau để xác thực:\n', authUrl);
+    console.log('\nSau khi xác thực, nhập mã code từ trình duyệt vào đây.\n');
+
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    const code = await new Promise((resolve) => {
+      rl.question('Nhập mã xác thực: ', (code) => {
+        rl.close();
+        resolve(code);
+      });
+    });
+
+    const { tokens } = await oAuth2Client.getToken(code);
+    oAuth2Client.setCredentials(tokens);
+
+    // Lưu token để lần sau dùng tiếp (bao gồm refresh_token)
+    fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2));
+    console.log('✅ Đã lưu token vào:', TOKEN_PATH);
+
+    return oAuth2Client;
+  }
+
   async saveOnDrive(filePath) {
     try {
-      const auth = await this.authorize();
+      const auth = await this.authorize2();
       const drive = google.drive({ version: 'v3', auth });
 
       const fileMetadata = {
