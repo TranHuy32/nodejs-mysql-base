@@ -980,7 +980,7 @@ class OrderService {
         // Save the document to a file
         const buffer = await Packer.toBuffer(doc);
         fs.writeFileSync(wordFilePath, buffer);
-        var convertapi = require('convertapi')('secret_c2HPUr43qnViLvRq');
+        var convertapi = require('convertapi')('tRyRkcFQixXx0S0c5Y9i0UojJIRzHM92');
         try {
           const result = await convertapi.convert('pdf', {
             File: wordFilePath,
